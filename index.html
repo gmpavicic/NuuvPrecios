@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Lista de Precios — Nuuv</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f2f4f7;min-height:100vh;padding:20px 14px 60px;display:flex;flex-direction:column;align-items:center}
+
+    /* HEADER */
+    .header{text-align:center;margin-bottom:20px;width:100%;max-width:480px}
+    .brand{font-size:26px;font-weight:900;color:#111;letter-spacing:-0.5px}
+    .brand span{color:#e85d00}
+    .sub{font-size:13px;color:#999;margin-top:3px}
+
+    /* TOGGLE SEÑA */
+    .tog-wrap{width:100%;max-width:480px;margin-bottom:16px}
+    #chkSena{display:none}
+    .tog-label{display:flex;align-items:center;justify-content:space-between;background:#fff8f2;border:2px solid #ffd9b8;border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .2s}
+    #chkSena:checked ~ .tog-label{background:#fff0e0;border-color:#e85d00}
+    .tl{font-size:14px;font-weight:700;color:#111}
+    .ts{font-size:11px;color:#999;margin-top:2px}
+    #chkSena:checked ~ .tog-label .ts{color:#e85d00;font-weight:600}
+    .pill{width:44px;height:24px;background:#ddd;border-radius:99px;position:relative;flex-shrink:0;transition:background .2s}
+    .pill::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+    #chkSena:checked ~ .tog-label .pill{background:#e85d00}
+    #chkSena:checked ~ .tog-label .pill::after{left:23px}
+
+    /* TABS */
+    .tabs{display:flex;gap:8px;width:100%;max-width:480px;margin-bottom:18px;overflow-x:auto;padding-bottom:2px}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{flex-shrink:0;padding:8px 16px;border-radius:99px;font-size:13px;font-weight:700;border:2px solid #e4e4e4;background:#fff;color:#777;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+    .tab.active{background:#e85d00;border-color:#e85d00;color:#fff}
+
+    /* CARDS */
+    .cards{width:100%;max-width:480px;display:flex;flex-direction:column;gap:14px}
+
+    .card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.07)}
+    .card.hidden{display:none}
+
+    .card-head{padding:18px 20px 14px;border-bottom:1px solid #f0f0f0}
+    .card-name{font-size:18px;font-weight:900;color:#111}
+    .cat-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;background:#f2f4f7;color:#999;border-radius:99px;padding:3px 10px;margin-bottom:6px}
+    .cat-badge.moto{background:#fff0e0;color:#e85d00}
+    .cat-badge.mono{background:#e8f4ff;color:#1a6eb5}
+    .cat-badge.bici{background:#e8fff0;color:#1a8c4e}
+
+    .prices{padding:14px 20px}
+
+    /* Precio contado destacado */
+    .contado-row{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#e85d00,#ff8800);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+    .contado-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.8)}
+    .contado-val{font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+
+    /* Lista tachada */
+    .lista-row{display:flex;justify-content:space-between;align-items:center;padding:6px 2px 10px;border-bottom:1px solid #f0f0f0;margin-bottom:4px}
+    .lista-lbl{font-size:12px;color:#aaa;font-weight:600}
+    .lista-val{font-size:13px;color:#bbb;text-decoration:line-through;font-weight:600}
+
+    /* Filas de cuotas */
+    .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#bbb;margin:12px 0 8px}
+
+    .prow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8f8f8}
+    .prow:last-child{border-bottom:none}
+    .prow-lbl{font-size:13px;color:#555;font-weight:600}
+    .prow-lbl small{display:block;font-size:11px;color:#bbb;font-weight:400;margin-top:1px}
+    .prow-val{text-align:right}
+    .prow-cuota{font-size:16px;font-weight:800;color:#111}
+    .prow-total{font-size:11px;color:#bbb;margin-top:1px}
+    .prow-val.naranja .prow-cuota{color:#e85d00}
+    .prow-val.azul .prow-cuota{color:#1a6eb5}
+    .prow-val.verde .prow-cuota{color:#1a8c4e}
+
+    .na-badge{font-size:12px;color:#ccc;font-weight:600;font-style:italic}
+
+    /* SEÑA info box */
+    .sena-box{background:#fff8f2;border:1.5px solid #ffd9b8;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:none}
+    .sena-box.on{display:block}
+    .sena-box .sl{font-size:11px;color:#e85d00;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+    .sena-box .sr{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#111}
+    .sena-box .sr span{color:#999;font-weight:500}
+
+    /* NOTAS */
+    .notas{width:100%;max-width:480px;margin-top:6px;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 4px 20px rgba(0,0,0,.07)}
+    .notas-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#bbb;margin-bottom:10px}
+    .nota{font-size:12px;color:#777;margin-bottom:6px;padding-left:10px;position:relative;line-height:1.5}
+    .nota::before{content:'·';position:absolute;left:0;color:#e85d00;font-weight:900}
+    .nota:last-child{margin-bottom:0}
+
+    .footer{margin-top:14px;font-size:11px;color:#bbb;text-align:center;width:100%;max-width:480px}
+
+    /* Botón WhatsApp */
+    .wa-btn{width:100%;margin-top:14px;padding:13px;background:#25d366;color:#fff;font-size:14px;font-weight:800;border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent}
+    .wa-btn:active{opacity:.85}
+    .wa-btn svg{flex-shrink:0}
+
+    /* Modal texto WA */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:flex-end;justify-content:center}
+    .modal-overlay.on{display:flex}
+    .modal-box{background:#fff;border-radius:20px 20px 0 0;padding:22px 18px 32px;width:100%;max-width:480px}
+    .modal-title{font-size:14px;font-weight:800;color:#111;margin-bottom:4px}
+    .modal-sub{font-size:12px;color:#999;margin-bottom:12px}
+    .modal-ta{width:100%;height:220px;border:2px solid #e4e4e4;border-radius:12px;padding:12px;font-size:13px;line-height:1.6;color:#333;resize:none;font-family:inherit}
+    .modal-ta:focus{outline:none;border-color:#25d366}
+    .modal-copy-btn{width:100%;margin-top:10px;padding:14px;background:#25d366;color:#fff;font-size:15px;font-weight:800;border:none;border-radius:12px;cursor:pointer}
+    .modal-copy-btn.done{background:#1a8c4e}
+    .modal-close{width:100%;margin-top:8px;padding:12px;background:#f2f4f7;color:#555;font-size:14px;font-weight:700;border:none;border-radius:12px;cursor:pointer}
+
+    /* Toggle verde (sin interés) */
+    #chkSinInt{display:none}
+    .tog-verde{background:#f0fff4;border-color:#b2f0c8}
+    #chkSinInt:checked ~ .tog-verde{background:#e0faea;border-color:#1a8c4e}
+    #chkSinInt:checked ~ .tog-verde .ts{color:#1a8c4e;font-weight:600}
+    .pill-verde{background:#ddd}
+    #chkSinInt:checked ~ .tog-verde .pill-verde{background:#1a8c4e}
+    #chkSinInt:checked ~ .tog-verde .pill-verde::after{left:23px}
+
+    .tcc-badge{display:inline-block;font-size:10px;font-weight:700;background:#fff3cd;color:#856404;border-radius:6px;padding:2px 7px;margin-top:3px}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">NUUV <span>·</span> Lista de Precios</div>
+  <div class="sub" id="subDate">Cargando fecha...</div>
+</div>
+
+<!-- Toggle seña -->
+<div class="tog-wrap">
+  <input type="checkbox" id="chkSena"/>
+  <label class="tog-label" for="chkSena">
+    <div>
+      <div class="tl">Con seña (50%)</div>
+      <div class="ts" id="togSub">Mostrando pago completo</div>
+    </div>
+    <div class="pill"></div>
+  </label>
+</div>
+
+<!-- Toggle cuotas sin interés -->
+<div class="tog-wrap">
+  <input type="checkbox" id="chkSinInt"/>
+  <label class="tog-label tog-verde" for="chkSinInt">
+    <div>
+      <div class="tl">Cuota Simple sin interés</div>
+      <div class="ts" id="togSinIntSub">El costo lo paga el cliente (CFT)</div>
+    </div>
+    <div class="pill pill-verde"></div>
+  </label>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-cat="all">Todos</div>
+  <div class="tab" data-cat="moto">Motos</div>
+  <div class="tab" data-cat="mono">Monopatines</div>
+  <div class="tab" data-cat="bici">Bicis</div>
+</div>
+
+<!-- Cards -->
+<div class="cards" id="cards"></div>
+
+<!-- Notas -->
+<div class="notas">
+  <div class="notas-title">Aclaraciones</div>
+  <div class="nota">Precio contado: valor que recibe la agencia.</div>
+  <div class="nota">Naranja X: arancel 1,80% + IVA. Interés por plan: 1c 4,10% · Plan Z 11,95% · 12c 21,60% · 18c 40,45%. El costo lo absorbe el cliente.</div>
+  <div class="nota">Bancor: TNA 19%, UVA $1.822,24. Solo aplica a motos homologadas.</div>
+  <div class="nota">Monopatines (KQi y XQi3) y bicis no tienen crédito Bancor.</div>
+  <div class="nota">Cuota Simple NAVE (3 y 6c): CFT 9,84% / 18,66% a cargo del cliente. Con el toggle "sin interés", vos absorbés el TCC (7,23% / 13,57%).</div>
+  <div class="nota">NAVE regular (9 y 12c): CFT 47,32% / 65,24% a cargo del cliente.</div>
+</div>
+
+<div class="footer" id="footer">Nuuv Córdoba — uso interno vendedores</div>
+
+<!-- Modal WhatsApp -->
+<div class="modal-overlay" id="waModal" onclick="cerrarModal(event)">
+  <div class="modal-box">
+    <div class="modal-title">Texto para WhatsApp</div>
+    <div class="modal-sub">Seleccioná todo y copiá, o tocá el botón</div>
+    <textarea class="modal-ta" id="waTexto" readonly onclick="this.select()"></textarea>
+    <button class="modal-copy-btn" id="modalCopyBtn" onclick="copiarDesdeModal()">Copiar todo</button>
+    <button class="modal-close" onclick="cerrarModal()">Cerrar</button>
+  </div>
+</div>
+
+<script>
+// Tasas reales Naranja X — el cliente absorbe arancel + interés + IVA sobre ambos
+var NX_ARANCEL = 1.80;
+var NX_IVA = 0.21;
+var NX_PLANES = [
+  { label:'1 cuota',   cuotas:1,  interes:4.10  },
+  { label:'Plan Z',    cuotas:0,  interes:11.95, nota:'El cliente elige cómo distribuir los pagos' },
+  { label:'12 cuotas', cuotas:12, interes:21.60 },
+  { label:'18 cuotas', cuotas:18, interes:40.65 }
+];
+
+function nxTotal(base, plan) {
+  // El cliente paga: lista × (1 + (arancel + interés) × (1 + IVA))
+  return base * (1 + (NX_ARANCEL + plan.interes) / 100 * (1 + NX_IVA));
+}
+
+var PRODUCTS = [
+  { cat:'moto', name:'M+ Sport',     full:{ lista:4290000,  contado:3900000,  b72:112000, b36:180000 }, sena:{ entrega:1950000, financiar:2145000, b72:56000,  b36:90000  } },
+  { cat:'moto', name:'NQi Sport EXT',full:{ lista:5588000,  contado:5080000,  b72:145000, b36:235000 }, sena:{ entrega:2540000, financiar:2794000, b72:72500,  b36:117500 } },
+  { cat:'moto', name:'UQi GT STD',   full:{ lista:6226000,  contado:5660000,  b72:162000, b36:261000 }, sena:{ entrega:2830000, financiar:3113000, b72:81000,  b36:130500 } },
+  { cat:'moto', name:'Gova 03',      full:{ lista:6600000,  contado:6000000,  b72:172000, b36:277000 }, sena:{ entrega:3000000, financiar:3300000, b72:86000,  b36:138500 } },
+  { cat:'moto', name:'NQi GTS 80',   full:{ lista:7260000,  contado:6600000,  b72:189000, b36:305000 }, sena:{ entrega:3300000, financiar:3630000, b72:94500,  b36:152500 } },
+  { cat:'moto', name:'XQi3 Wild',    full:{ lista:14300000, contado:13000000, b72:null,   b36:null   }, sena:{ entrega:6500000, financiar:7150000, b72:null,   b36:null   } },
+  { cat:'mono', name:'KQi 2 Pro',    full:{ lista:1925000,  contado:1750000,  b72:null,   b36:null   }, sena:{ entrega:875000,  financiar:962500,  b72:null,   b36:null   } },
+  { cat:'mono', name:'KQi 3 Pro',    full:{ lista:2145000,  contado:1950000,  b72:null,   b36:null   }, sena:{ entrega:975000,  financiar:1072500, b72:null,   b36:null   } },
+  { cat:'bici', name:'Emperor R26',  full:{ lista:2200000,  contado:1800000,  b72:null,   b36:null   }, sena:{ entrega:900000,  financiar:1100000, b72:null,   b36:null   } },
+  { cat:'bici', name:'Rage R29',     full:{ lista:2300000,  contado:1900000,  b72:null,   b36:null   }, sena:{ entrega:950000,  financiar:1150000, b72:null,   b36:null   } }
+];
+
+var CAT_LABELS = { moto:'Moto', mono:'Monopatín', bici:'Bici eléctrica' };
+
+function peso(n) {
+  if (!n && n !== 0) return '—';
+  var s = Math.round(n).toString();
+  var out = '';
+  for (var i = s.length - 1, c = 0; i >= 0; i--, c++) {
+    if (c > 0 && c % 3 === 0) out = '.' + out;
+    out = s[i] + out;
+  }
+  return '$ ' + out;
+}
+
+var withSena = false;
+var sinInteres = false;
+var activeCat = 'all';
+
+function buildCards() {
+  var container = document.getElementById('cards');
+  container.innerHTML = '';
+
+  PRODUCTS.forEach(function(p, idx) {
+    var d = withSena ? p.sena : p.full;
+    var hidden = (activeCat !== 'all' && activeCat !== p.cat) ? ' hidden' : '';
+
+    var bancorHTML = '';
+    if (p.full.b72 || p.full.b36) {
+      var bd = withSena ? p.sena : p.full;
+      bancorHTML = '<div class="section-title">Bancor (cuota mensual)</div>'
+        + row('Bancor 72 cuotas', '<div class="prow-cuota">' + peso(bd.b72) + '/mes</div><div class="prow-total">72 meses</div>', 'azul')
+        + row('Bancor 36 cuotas', '<div class="prow-cuota">' + peso(bd.b36) + '/mes</div><div class="prow-total">36 meses</div>', 'azul');
+    } else {
+      bancorHTML = '<div class="section-title">Bancor</div>'
+        + '<div class="prow"><div class="prow-lbl">Crédito Bancor</div><div class="na-badge">No aplica</div></div>';
+    }
+
+    var senaBoxHTML = withSena
+      ? '<div class="sena-box on"><div class="sl">Con seña — 50%</div><div class="sr"><span>Entrega inicial</span>' + peso(d.entrega) + '</div><div class="sr" style="margin-top:4px"><span>A financiar</span>' + peso(d.financiar) + '</div></div>'
+      : '';
+
+    var html = '<div class="card' + hidden + '" data-cat="' + p.cat + '">'
+      + '<div class="card-head">'
+      + '<div class="cat-badge ' + p.cat + '">' + CAT_LABELS[p.cat] + '</div>'
+      + '<div class="card-name">' + p.name + '</div>'
+      + '</div>'
+      + '<div class="prices">'
+      + senaBoxHTML
+      + '<div class="lista-row"><span class="lista-lbl">Precio lista</span><span class="lista-val">' + peso(p.full.lista) + '</span></div>'
+      + '<div class="contado-row"><div><div class="contado-lbl">Precio contado</div></div><div class="contado-val">' + peso(p.full.contado) + '</div></div>'
+      + '<div class="section-title">Cuota Simple — NAVE (Galicia)</div>'
+      + (function(){
+          var base = withSena ? d.financiar : p.full.lista;
+          if (sinInteres) {
+            return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>', 'verde')
+                 + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>', 'verde');
+          } else {
+            var t3 = base * 1.0984, t6 = base * 1.1866;
+            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 9,84%</div>', 'verde')
+                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 18,66%</div>', 'verde');
+          }
+        })()
+      + '<div class="section-title">Naranja X</div>'
+      + (function(){
+          var base = withSena ? d.financiar : p.full.lista;
+          return NX_PLANES.map(function(plan) {
+            var total = nxTotal(base, plan);
+            var valHTML;
+            if (plan.cuotas === 0) {
+              valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">' + plan.nota + '</div>';
+            } else if (plan.cuotas === 1) {
+              valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">Pago único en POSNET</div>';
+            } else {
+              valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div>';
+            }
+            return row(plan.label, valHTML, 'naranja');
+          }).join('');
+        })()
+      + '<div class="section-title">NAVE — Galicia (12 cuotas)</div>'
+      + (function(){
+          var base = withSena ? d.financiar : p.full.lista;
+          var nave = [
+            { label:'12 cuotas', n:12, cft:65.24 }
+          ];
+          return nave.map(function(pl) {
+            var total = base * (1 + pl.cft/100);
+            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>', 'azul');
+          }).join('');
+        })()
+      + bancorHTML
+      + '<button class="wa-btn" onclick="copiarWA(' + idx + ')"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.857L.054 23.447a.5.5 0 00.499.553.498.498 0 00.131-.018l5.736-1.51A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.875 9.875 0 01-5.031-1.378l-.36-.214-3.733.983.998-3.648-.235-.374A9.859 9.859 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118S21.882 6.533 21.882 12 17.467 21.882 12 21.882z"/></svg>Copiar para WhatsApp</button>'
+      + '</div></div>';
+
+    container.insertAdjacentHTML('beforeend', html);
+  });
+}
+
+function copiarWA(idx) {
+  var p = PRODUCTS[idx];
+  var d = withSena ? p.sena : p.full;
+  var base = withSena ? d.financiar : p.full.lista;
+
+  var lines = [];
+  lines.push('🛵 *' + p.name + '*');
+  lines.push('');
+
+  if (withSena) {
+    lines.push('📋 *Con seña (50%)*');
+    lines.push('• Entrega inicial: ' + peso(d.entrega));
+    lines.push('• Monto a financiar: ' + peso(d.financiar));
+    lines.push('');
+  }
+
+  lines.push('💵 *Contado efectivo:* ' + peso(p.full.contado));
+  lines.push('_(Precio lista: ' + peso(p.full.lista) + ')_');
+  lines.push('');
+
+  // Plan Simple
+  lines.push('🟢 *Cuota Simple — NAVE*');
+  if (sinInteres) {
+    lines.push('• 3 cuotas sin interés: ' + peso(base/3) + '/mes _(TCC 7,23% a cargo del comercio)_');
+    lines.push('• 6 cuotas sin interés: ' + peso(base/6) + '/mes _(TCC 13,57% a cargo del comercio)_');
+  } else {
+    var t3 = base * 1.0984, t6 = base * 1.1866;
+    lines.push('• 3 cuotas: ' + peso(t3/3) + '/mes (Total: ' + peso(t3) + ')');
+    lines.push('• 6 cuotas: ' + peso(t6/6) + '/mes (Total: ' + peso(t6) + ')');
+  }
+  lines.push('');
+
+  // NAVE 12
+  lines.push('🔵 *NAVE — Galicia*');
+  var naveTotal = base * (1 + 65.24/100);
+  lines.push('• 12 cuotas: ' + peso(naveTotal/12) + '/mes (Total: ' + peso(naveTotal) + ')');
+  lines.push('');
+
+  // Naranja X
+  lines.push('🟠 *Naranja X*');
+  NX_PLANES.forEach(function(plan) {
+    var total = nxTotal(base, plan);
+    if (plan.cuotas === 0) {
+      lines.push('• ' + plan.label + ': ' + peso(total) + ' _(el cliente distribuye los pagos)_');
+    } else if (plan.cuotas === 1) {
+      lines.push('• 1 cuota: ' + peso(total));
+    } else {
+      lines.push('• ' + plan.label + ': ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')');
+    }
+  });
+  lines.push('');
+
+  // Bancor
+  if (p.full.b72 || p.full.b36) {
+    var bd = withSena ? p.sena : p.full;
+    lines.push('🏦 *Bancor*');
+    lines.push('• 36 cuotas: ' + peso(bd.b36) + '/mes');
+    lines.push('• 72 cuotas: ' + peso(bd.b72) + '/mes');
+    lines.push('');
+  }
+
+  lines.push('_Nuuv Córdoba — Concesionario oficial NIU_');
+
+  var texto = lines.join('\n');
+  document.getElementById('waTexto').value = texto;
+  document.getElementById('modalCopyBtn').textContent = 'Copiar todo';
+  document.getElementById('modalCopyBtn').classList.remove('done');
+  document.getElementById('waModal').classList.add('on');
+  setTimeout(function(){ document.getElementById('waTexto').select(); }, 100);
+}
+
+function copiarDesdeModal() {
+  var ta = document.getElementById('waTexto');
+  ta.select();
+  document.execCommand('copy');
+  var btn = document.getElementById('modalCopyBtn');
+  btn.textContent = '✓ ¡Copiado!';
+  btn.classList.add('done');
+  setTimeout(function(){ cerrarModal(); }, 1200);
+}
+
+function cerrarModal(e) {
+  if (e && e.target !== document.getElementById('waModal')) return;
+  document.getElementById('waModal').classList.remove('on');
+}
+
+function row(lbl, valHTML, colorClass) {
+  return '<div class="prow"><div class="prow-lbl">' + lbl + '</div><div class="prow-val ' + colorClass + '">' + valHTML + '</div></div>';
+}
+
+// Toggle seña
+document.getElementById('chkSena').addEventListener('change', function() {
+  withSena = this.checked;
+  document.getElementById('togSub').textContent = withSena ? 'Mostrando precios con seña 50%' : 'Mostrando pago completo';
+  buildCards();
+});
+
+// Toggle sin interés
+document.getElementById('chkSinInt').addEventListener('change', function() {
+  sinInteres = this.checked;
+  document.getElementById('togSinIntSub').textContent = sinInteres ? 'El costo TCC lo absorbés vos' : 'El costo lo paga el cliente (CFT)';
+  buildCards();
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    this.classList.add('active');
+    activeCat = this.dataset.cat;
+    document.querySelectorAll('.card').forEach(function(card) {
+      if (activeCat === 'all' || card.dataset.cat === activeCat) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+  });
+});
+
+// Fecha
+(function() {
+  var d = new Date();
+  var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('subDate').textContent = 'Precios al ' + d.getDate() + ' de ' + months[d.getMonth()] + ' de ' + d.getFullYear();
+})();
+
+buildCards();
+</script>
+</body>
+</html>
