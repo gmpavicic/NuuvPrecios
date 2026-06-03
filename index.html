@@ -91,6 +91,22 @@
 
     .footer{margin-top:14px;font-size:11px;color:#bbb;text-align:center;width:100%;max-width:480px}
 
+    /* Input precio ajustado */
+    .precio-wrap{margin:0 0 14px;padding:12px 14px;background:#f9f9f9;border-radius:12px;border:2px solid #eee}
+    .precio-row{display:flex;align-items:center;gap:10px}
+    .precio-wrap label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#aaa;white-space:nowrap}
+    .precio-input{flex:1;border:none;background:transparent;font-size:20px;font-weight:800;color:#111;outline:none;font-family:inherit;text-align:right;min-width:0}
+    .precio-wrap.modified{border-color:#e85d00;background:#fff8f2}
+    .precio-wrap.modified label{color:#e85d00}
+    .reset-btn{font-size:11px;color:#ccc;background:none;border:none;cursor:pointer;padding:0;font-weight:700;white-space:nowrap}
+    .reset-btn:hover{color:#e85d00}
+    .desc-row{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #eee}
+    .desc-field{flex:1;background:#fff;border:1.5px solid #e4e4e4;border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:4px}
+    .desc-field.active{border-color:#e85d00}
+    .desc-sym{font-size:12px;font-weight:700;color:#bbb}
+    .desc-input{flex:1;border:none;background:transparent;font-size:14px;font-weight:700;color:#111;outline:none;font-family:inherit;min-width:0;width:100%}
+    .desc-lbl{font-size:10px;color:#bbb;font-weight:600;display:block;margin-bottom:2px}
+
     /* Botón WhatsApp */
     .wa-btn{width:100%;margin-top:14px;padding:13px;background:#25d366;color:#fff;font-size:14px;font-weight:800;border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent}
     .wa-btn:active{opacity:.85}
@@ -231,6 +247,8 @@ function peso(n) {
 var withSena = false;
 var sinInteres = false;
 var activeCat = 'all';
+var customPrices = {};
+var descuentos = {};
 
 function buildCards() {
   var container = document.getElementById('cards');
@@ -239,10 +257,14 @@ function buildCards() {
   PRODUCTS.forEach(function(p, idx) {
     var d = withSena ? p.sena : p.full;
     var hidden = (activeCat !== 'all' && activeCat !== p.cat) ? ' hidden' : '';
+    // Precio efectivo: custom o lista original
+    var precioEfectivo = customPrices[idx] || p.full.lista;
 
     var bancorHTML = '';
     if (p.full.b72 || p.full.b36) {
+      var bancorRatio = precioEfectivo / p.full.lista;
       var bd = withSena ? p.sena : p.full;
+      bd = { b72: Math.round(bd.b72 * bancorRatio), b36: Math.round(bd.b36 * bancorRatio) };
       bancorHTML = '<div class="section-title">Bancor (cuota mensual)</div>'
         + row('Bancor 72 cuotas', '<div class="prow-cuota">' + peso(bd.b72) + '/mes</div><div class="prow-total">72 meses</div>', 'azul')
         + row('Bancor 36 cuotas', '<div class="prow-cuota">' + peso(bd.b36) + '/mes</div><div class="prow-total">36 meses</div>', 'azul');
@@ -255,18 +277,43 @@ function buildCards() {
       ? '<div class="sena-box on"><div class="sl">Con seña — 50%</div><div class="sr"><span>Entrega inicial</span>' + peso(d.entrega) + '</div><div class="sr" style="margin-top:4px"><span>A financiar</span>' + peso(d.financiar) + '</div></div>'
       : '';
 
-    var html = '<div class="card' + hidden + '" data-cat="' + p.cat + '">'
+    var html = '<div class="card' + hidden + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
       + '<div class="card-head">'
       + '<div class="cat-badge ' + p.cat + '">' + CAT_LABELS[p.cat] + '</div>'
       + '<div class="card-name">' + p.name + '</div>'
       + '</div>'
       + '<div class="prices">'
       + senaBoxHTML
-      + '<div class="lista-row"><span class="lista-lbl">Precio lista</span><span class="lista-val">' + peso(p.full.lista) + '</span></div>'
-      + '<div class="contado-row"><div><div class="contado-lbl">Precio contado</div></div><div class="contado-val">' + peso(p.full.contado) + '</div></div>'
+      + (function(){
+          var isModified = !!customPrices[idx];
+          var descObj = descuentos[idx] || {};
+          var dNom = descObj.nominal != null ? descObj.nominal : '';
+          var dPct = descObj.pct != null ? descObj.pct : '';
+          return '<div class="precio-wrap' + (isModified ? ' modified' : '') + '" id="pwrap-' + idx + '">'
+            + '<div class="precio-row">'
+            + '<label>Precio lista</label>'
+            + '<input class="precio-input" id="pinput-' + idx + '" type="tel" inputmode="numeric" value="' + (customPrices[idx] || p.full.lista) + '" oninput="onPrecioInput(' + idx + ',this.value)" />'
+            + (isModified ? '<button class="reset-btn" onclick="resetPrecio(' + idx + ')">Resetear</button>' : '')
+            + '</div>'
+            + '<div class="desc-row">'
+            + '<div class="' + (dNom !== '' ? 'desc-field active' : 'desc-field') + '">'
+            + '<span class="desc-lbl">Descuento $</span>'
+            + '<div style="display:flex;align-items:center;gap:4px"><span class="desc-sym">-$</span>'
+            + '<input class="desc-input" id="dnom-' + idx + '" type="tel" inputmode="numeric" placeholder="0" value="' + dNom + '" oninput="onDescNominal(' + idx + ',this.value)" /></div>'
+            + '</div>'
+            + '<div class="' + (dPct !== '' ? 'desc-field active' : 'desc-field') + '">'
+            + '<span class="desc-lbl">Descuento %</span>'
+            + '<div style="display:flex;align-items:center;gap:4px">'
+            + '<input class="desc-input" id="dpct-' + idx + '" type="number" inputmode="decimal" placeholder="0" step="0.1" value="' + dPct + '" oninput="onDescPct(' + idx + ',this.value)" />'
+            + '<span class="desc-sym">%</span></div>'
+            + '</div>'
+            + '</div>'
+            + '</div>';
+        })()
+      + '<div class="contado-row"><div><div class="contado-lbl">Precio contado</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Descuento: ' + peso((customPrices[idx] || p.full.lista) - Math.round((customPrices[idx] || p.full.lista) * p.full.contado / p.full.lista)) + '</div></div><div class="contado-val">' + peso(Math.round((customPrices[idx] || p.full.lista) * p.full.contado / p.full.lista)) + '</div></div>'
       + '<div class="section-title">Cuota Simple — NAVE (Galicia)</div>'
       + (function(){
-          var base = withSena ? d.financiar : p.full.lista;
+          var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
           if (sinInteres) {
             return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>', 'verde')
                  + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>', 'verde');
@@ -278,7 +325,7 @@ function buildCards() {
         })()
       + '<div class="section-title">Naranja X</div>'
       + (function(){
-          var base = withSena ? d.financiar : p.full.lista;
+          var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
           return NX_PLANES.map(function(plan) {
             var total = nxTotal(base, plan);
             var valHTML;
@@ -294,7 +341,7 @@ function buildCards() {
         })()
       + '<div class="section-title">NAVE — Galicia (12 cuotas)</div>'
       + (function(){
-          var base = withSena ? d.financiar : p.full.lista;
+          var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
           var nave = [
             { label:'12 cuotas', n:12, cft:65.24 }
           ];
@@ -311,10 +358,82 @@ function buildCards() {
   });
 }
 
+function aplicarPrecio(idx, precio, descNom, descPct) {
+  if (precio && precio !== PRODUCTS[idx].full.lista) {
+    customPrices[idx] = precio;
+  } else {
+    delete customPrices[idx];
+  }
+  if (descNom != null || descPct != null) {
+    descuentos[idx] = { nominal: descNom, pct: descPct };
+  } else {
+    delete descuentos[idx];
+  }
+  var scrollY = window.scrollY;
+  buildCards();
+  window.scrollTo(0, scrollY);
+}
+
+function onPrecioInput(idx, val) {
+  var n = parseInt(val.replace(/\D/g, ''), 10);
+  // Al editar precio directo, limpiar descuentos
+  delete descuentos[idx];
+  if (n && n > 0) { customPrices[idx] = n; } else { delete customPrices[idx]; }
+  var scrollY = window.scrollY;
+  buildCards();
+  window.scrollTo(0, scrollY);
+  var input = document.getElementById('pinput-' + idx);
+  if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+}
+
+function onDescNominal(idx, val) {
+  var lista = PRODUCTS[idx].full.lista;
+  var nom = parseInt(val.replace(/\D/g, ''), 10);
+  if (!nom || nom <= 0) {
+    delete descuentos[idx]; delete customPrices[idx];
+    var sy = window.scrollY; buildCards(); window.scrollTo(0,sy);
+    var f = document.getElementById('dnom-' + idx); if(f){f.focus();}
+    return;
+  }
+  var nuevoPrecio = lista - nom;
+  var pct = parseFloat((nom / lista * 100).toFixed(2));
+  customPrices[idx] = nuevoPrecio;
+  descuentos[idx] = { nominal: nom, pct: pct };
+  var sy = window.scrollY; buildCards(); window.scrollTo(0,sy);
+  var f = document.getElementById('dnom-' + idx); if(f){f.focus(); f.setSelectionRange(f.value.length,f.value.length);}
+}
+
+function onDescPct(idx, val) {
+  var lista = PRODUCTS[idx].full.lista;
+  var pct = parseFloat(val);
+  if (!pct || pct <= 0) {
+    delete descuentos[idx]; delete customPrices[idx];
+    var sy = window.scrollY; buildCards(); window.scrollTo(0,sy);
+    var f = document.getElementById('dpct-' + idx); if(f){f.focus();}
+    return;
+  }
+  var nom = Math.round(lista * pct / 100);
+  var nuevoPrecio = lista - nom;
+  customPrices[idx] = nuevoPrecio;
+  descuentos[idx] = { nominal: nom, pct: pct };
+  var sy = window.scrollY; buildCards(); window.scrollTo(0,sy);
+  var f = document.getElementById('dpct-' + idx); if(f){f.focus(); f.setSelectionRange(f.value.length,f.value.length);}
+}
+
+function resetPrecio(idx) {
+  delete customPrices[idx];
+  delete descuentos[idx];
+  var scrollY = window.scrollY;
+  buildCards();
+  window.scrollTo(0, scrollY);
+}
+
 function copiarWA(idx) {
   var p = PRODUCTS[idx];
   var d = withSena ? p.sena : p.full;
-  var base = withSena ? d.financiar : p.full.lista;
+  var precioEfectivo = customPrices[idx] || p.full.lista;
+  var contadoEfectivo = Math.round(precioEfectivo * p.full.contado / p.full.lista);
+  var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
 
   var lines = [];
   lines.push('🛵 *' + p.name + '*');
@@ -327,8 +446,8 @@ function copiarWA(idx) {
     lines.push('');
   }
 
-  lines.push('💵 *Contado efectivo:* ' + peso(p.full.contado));
-  lines.push('_(Precio lista: ' + peso(p.full.lista) + ')_');
+  lines.push('💵 *Contado efectivo:* ' + peso(contadoEfectivo));
+  lines.push('_(Precio lista: ' + peso(precioEfectivo) + ')_');
   lines.push('');
 
   // Plan Simple
