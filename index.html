@@ -53,6 +53,10 @@
     .contado-row{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#e85d00,#ff8800);border-radius:12px;padding:14px 16px;margin-bottom:12px}
     .contado-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.8)}
     .contado-val{font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+    .contado-input-wrap{display:flex;align-items:center;background:rgba(255,255,255,.18);border-radius:8px;padding:4px 8px;gap:2px}
+    .contado-input-wrap .csym{font-size:18px;font-weight:900;color:#fff}
+    .contado-input{width:130px;border:none;background:transparent;font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;outline:none;font-family:inherit;text-align:right;padding:0}
+    .contado-input::placeholder{color:rgba(255,255,255,.5)}
 
     /* Lista tachada */
     .lista-row{display:flex;justify-content:space-between;align-items:center;padding:6px 2px 10px;border-bottom:1px solid #f0f0f0;margin-bottom:4px}
@@ -249,6 +253,7 @@ var sinInteres = false;
 var activeCat = 'all';
 var customPrices = {};
 var descuentos = {};
+var customContado = {};
 
 function buildCards() {
   var container = document.getElementById('cards');
@@ -285,7 +290,7 @@ function buildCards() {
       + '<div class="prices">'
       + senaBoxHTML
       + (function(){
-          var isModified = !!customPrices[idx];
+          var isModified = !!customPrices[idx] || customContado[idx] != null;
           var descObj = descuentos[idx] || {};
           var dNom = descObj.nominal != null ? descObj.nominal : '';
           var dPct = descObj.pct != null ? descObj.pct : '';
@@ -310,7 +315,18 @@ function buildCards() {
             + '</div>'
             + '</div>';
         })()
-      + '<div class="contado-row"><div><div class="contado-lbl">Precio contado</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Descuento: ' + peso((customPrices[idx] || p.full.lista) - Math.round((customPrices[idx] || p.full.lista) * p.full.contado / p.full.lista)) + '</div></div><div class="contado-val">' + peso(Math.round((customPrices[idx] || p.full.lista) * p.full.contado / p.full.lista)) + '</div></div>'
+      + (function(){
+          var contadoAuto = Math.round(precioEfectivo * p.full.contado / p.full.lista);
+          var contadoMostrado = (customContado[idx] != null) ? customContado[idx] : contadoAuto;
+          var disc = p.full.contado - contadoMostrado;
+          var discPct = disc / p.full.contado * 100;
+          var descLine = disc > 0
+            ? '<div style="font-size:11px;color:rgba(255,255,255,.9);margin-top:2px;font-weight:600">Descuento: -' + peso(disc) + ' (' + discPct.toFixed(1).replace('.', ',') + '%)</div>'
+            : '<div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Tocá el monto para editar</div>';
+          return '<div class="contado-row"><div><div class="contado-lbl">Precio contado efectivo</div>' + descLine + '</div>'
+            + '<div class="contado-input-wrap"><span class="csym">$</span>'
+            + '<input class="contado-input" id="cinput-' + idx + '" type="tel" inputmode="numeric" value="' + contadoMostrado + '" oninput="onContadoInput(' + idx + ',this.value)" /></div></div>';
+        })()
       + '<div class="section-title">Cuota Simple — NAVE (Galicia)</div>'
       + (function(){
           var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
@@ -376,8 +392,9 @@ function aplicarPrecio(idx, precio, descNom, descPct) {
 
 function onPrecioInput(idx, val) {
   var n = parseInt(val.replace(/\D/g, ''), 10);
-  // Al editar precio directo, limpiar descuentos
+  // Al editar precio directo, limpiar descuentos y contado custom
   delete descuentos[idx];
+  delete customContado[idx];
   if (n && n > 0) { customPrices[idx] = n; } else { delete customPrices[idx]; }
   var scrollY = window.scrollY;
   buildCards();
@@ -399,6 +416,7 @@ function onDescNominal(idx, val) {
   var pct = parseFloat((nom / lista * 100).toFixed(2));
   customPrices[idx] = nuevoPrecio;
   descuentos[idx] = { nominal: nom, pct: pct };
+  delete customContado[idx];
   var sy = window.scrollY; buildCards(); window.scrollTo(0,sy);
   var f = document.getElementById('dnom-' + idx); if(f){f.focus(); f.setSelectionRange(f.value.length,f.value.length);}
 }
@@ -416,13 +434,43 @@ function onDescPct(idx, val) {
   var nuevoPrecio = lista - nom;
   customPrices[idx] = nuevoPrecio;
   descuentos[idx] = { nominal: nom, pct: pct };
+  delete customContado[idx];
   var sy = window.scrollY; buildCards(); window.scrollTo(0,sy);
   var f = document.getElementById('dpct-' + idx); if(f){f.focus(); f.setSelectionRange(f.value.length,f.value.length);}
+}
+
+function onContadoInput(idx, val) {
+  var p = PRODUCTS[idx];
+  var ratio = p.full.contado / p.full.lista; // contado = lista × ratio
+  var n = parseInt(val.replace(/\D/g, ''), 10);
+  if (n && n > 0) {
+    customContado[idx] = n;
+    // Derivar el precio lista equivalente para recalcular toda la financiación
+    var listaEquiv = Math.round(n / ratio);
+    customPrices[idx] = listaEquiv;
+    // Reflejar el descuento equivalente en los campos de lista
+    var nomLista = p.full.lista - listaEquiv;
+    if (nomLista > 0) {
+      descuentos[idx] = { nominal: nomLista, pct: parseFloat((nomLista / p.full.lista * 100).toFixed(2)) };
+    } else {
+      delete descuentos[idx];
+    }
+  } else {
+    delete customContado[idx];
+    delete customPrices[idx];
+    delete descuentos[idx];
+  }
+  var scrollY = window.scrollY;
+  buildCards();
+  window.scrollTo(0, scrollY);
+  var input = document.getElementById('cinput-' + idx);
+  if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
 function resetPrecio(idx) {
   delete customPrices[idx];
   delete descuentos[idx];
+  delete customContado[idx];
   var scrollY = window.scrollY;
   buildCards();
   window.scrollTo(0, scrollY);
@@ -432,7 +480,7 @@ function copiarWA(idx) {
   var p = PRODUCTS[idx];
   var d = withSena ? p.sena : p.full;
   var precioEfectivo = customPrices[idx] || p.full.lista;
-  var contadoEfectivo = Math.round(precioEfectivo * p.full.contado / p.full.lista);
+  var contadoEfectivo = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista);
   var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
 
   var lines = [];
