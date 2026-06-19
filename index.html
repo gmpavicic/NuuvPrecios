@@ -400,7 +400,7 @@ function onPrecioInput(idx, val) {
   buildCards();
   window.scrollTo(0, scrollY);
   var input = document.getElementById('pinput-' + idx);
-  if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
 function onDescNominal(idx, val) {
@@ -464,7 +464,7 @@ function onContadoInput(idx, val) {
   buildCards();
   window.scrollTo(0, scrollY);
   var input = document.getElementById('cinput-' + idx);
-  if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
 function resetPrecio(idx) {
