@@ -186,7 +186,7 @@
 <div class="notas">
   <div class="notas-title">Aclaraciones</div>
   <div class="nota">Precio contado: valor que recibe la agencia.</div>
-  <div class="nota">Naranja X: arancel 1,80% + IVA. Interés por plan: 1c 4,10% · Plan Z 11,95% · 12c 21,60% · 18c 40,45%. El costo lo absorbe el cliente.</div>
+  <div class="nota">Naranja X (nuevo convenio con bonificaciones): costo total por plan — 1c 7,14% · Plan Z 8,23% · 5c 12,64% · 9c 19,60% · 12c 24,44% · 15c 28,92%. Incluye interés promocional, arancel e impuestos.</div>
   <div class="nota">Bancor: TNA 19%, UVA $1.822,24. Solo aplica a motos homologadas.</div>
   <div class="nota">Monopatines (KQi y XQi3) y bicis no tienen crédito Bancor.</div>
   <div class="nota">Cuota Simple NAVE (3 y 6c): CFT 9,84% / 18,66% a cargo del cliente. Con el toggle "sin interés", vos absorbés el TCC (7,23% / 13,57%).</div>
@@ -207,19 +207,20 @@
 </div>
 
 <script>
-// Tasas reales Naranja X — el cliente absorbe arancel + interés + IVA sobre ambos
-var NX_ARANCEL = 1.80;
-var NX_IVA = 0.21;
+// Naranja X — nuevo convenio con bonificaciones. Costo total ya incluye interés
+// promocional, arancel por venta e impuestos.
 var NX_PLANES = [
-  { label:'1 cuota',   cuotas:1,  interes:4.10  },
-  { label:'Plan Z',    cuotas:0,  interes:11.95, nota:'El cliente elige cómo distribuir los pagos' },
-  { label:'12 cuotas', cuotas:12, interes:21.60 },
-  { label:'18 cuotas', cuotas:18, interes:40.65 }
+  { label:'1 cuota',   cuotas:1,  costo:7.14  },
+  { label:'Plan Z',    cuotas:0,  costo:8.23,  nota:'El cliente elige cómo distribuir los pagos' },
+  { label:'5 cuotas',  cuotas:5,  costo:12.64 },
+  { label:'9 cuotas',  cuotas:9,  costo:19.60 },
+  { label:'12 cuotas', cuotas:12, costo:24.44 },
+  { label:'15 cuotas', cuotas:15, costo:28.92 }
 ];
 
 function nxTotal(base, plan) {
-  // El cliente paga: lista × (1 + (arancel + interés) × (1 + IVA))
-  return base * (1 + (NX_ARANCEL + plan.interes) / 100 * (1 + NX_IVA));
+  // El costo total ya incluye interés promocional + arancel + impuestos
+  return base * (1 + plan.costo / 100);
 }
 
 var PRODUCTS = [
