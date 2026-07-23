@@ -143,6 +143,10 @@
     #chkSinInt:checked ~ .tog-verde .pill-verde::after{left:23px}
 
     .tcc-badge{display:inline-block;font-size:10px;font-weight:700;background:#fff3cd;color:#856404;border-radius:6px;padding:2px 7px;margin-top:3px}
+    .pct-badge{display:inline-block;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;margin-top:3px}
+    .pct-mas{background:#fdecec;color:#c0392b}
+    .pct-menos{background:#e8fff0;color:#1a8c4e}
+    .pct-cero{background:#e8f4ff;color:#1a6eb5}
   </style>
 </head>
 <body>
@@ -357,12 +361,12 @@ function buildCards() {
       + (function(){
           var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
           if (sinInteres) {
-            return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>', 'verde')
-                 + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>', 'verde');
+            return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>' + pctLista(base, base), 'verde')
+                 + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>' + pctLista(base, base), 'verde');
           } else {
             var t3 = base * 1.0984, t6 = base * 1.1866;
-            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 9,84%</div>', 'verde')
-                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 18,66%</div>', 'verde');
+            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 9,84%</div>' + pctLista(t3, base), 'verde')
+                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 18,66%</div>' + pctLista(t6, base), 'verde');
           }
         })()
       + '<div class="section-title">Naranja X</div>'
@@ -372,13 +376,13 @@ function buildCards() {
             var total = nxTotal(base, plan);
             var valHTML;
             if (plan.cuotas === 0) {
-              valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">' + plan.nota + '</div>';
+              valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">' + plan.nota + '</div>' + pctLista(total, base);
             } else if (plan.cuotas === 1) {
-              valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">Pago único en POSNET</div>';
+              valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">Pago único en POSNET</div>' + pctLista(total, base);
             } else if (esSinInteres(plan)) {
               valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div><div class="tcc-badge">SIN INTERÉS · costo ' + plan.costo.toFixed(2).replace('.', ',') + '% a tu cargo</div>';
             } else {
-              valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div>';
+              valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div>' + pctLista(total, base);
             }
             var lbl = esSinInteres(plan) ? plan.label + ' sin interés' : plan.label;
             return row(lbl, valHTML, 'naranja');
@@ -392,7 +396,7 @@ function buildCards() {
           ];
           return nave.map(function(pl) {
             var total = base * (1 + pl.cft/100);
-            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>', 'azul');
+            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>' + pctLista(total, base), 'azul');
           }).join('');
         })()
       + bancorHTML
@@ -597,6 +601,15 @@ function cerrarModal(e) {
 
 function row(lbl, valHTML, colorClass) {
   return '<div class="prow"><div class="prow-lbl">' + lbl + '</div><div class="prow-val ' + colorClass + '">' + valHTML + '</div></div>';
+}
+
+// Badge con el % sobre precio lista que termina pagando el cliente
+function pctLista(total, base) {
+  var pct = (total / base - 1) * 100;
+  var signo = pct > 0.05 ? '+' : (pct < -0.05 ? '' : '');
+  var cls = pct > 0.05 ? 'pct-mas' : (pct < -0.05 ? 'pct-menos' : 'pct-cero');
+  var txt = Math.abs(pct) < 0.05 ? 'sin recargo' : signo + pct.toFixed(1).replace('.', ',') + '% s/ lista';
+  return '<span class="pct-badge ' + cls + '">' + txt + '</span>';
 }
 
 // Toggle seña
