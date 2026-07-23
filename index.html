@@ -116,6 +116,11 @@
     .wa-btn:active{opacity:.85}
     .wa-btn svg{flex-shrink:0}
 
+    /* Banner promo */
+    .promo-banner{width:100%;max-width:480px;margin:0 0 16px;padding:14px 16px;background:linear-gradient(135deg,#7b2ff7,#e85d00);border-radius:14px;color:#fff;text-align:center;box-shadow:0 4px 20px rgba(123,47,247,.25)}
+    .promo-banner .pt{font-size:14px;font-weight:900;letter-spacing:.3px}
+    .promo-banner .ps{font-size:12px;opacity:.9;margin-top:3px;font-weight:600}
+
     /* Modal texto WA */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:flex-end;justify-content:center}
     .modal-overlay.on{display:flex}
@@ -145,6 +150,11 @@
 <div class="header">
   <div class="brand">NUUV <span>·</span> Lista de Precios</div>
   <div class="sub" id="subDate">Cargando fecha...</div>
+</div>
+
+<div class="promo-banner" id="promoBanner" style="display:none">
+  <div class="pt">⚡ Semana de la Movilidad Eléctrica</div>
+  <div class="ps">12 cuotas SIN INTERÉS · del 3 al 9 de agosto</div>
 </div>
 
 <!-- Toggle seña -->
@@ -187,7 +197,7 @@
   <div class="notas-title">Aclaraciones</div>
   <div class="nota">Precio contado: valor que recibe la agencia.</div>
   <div class="nota">Naranja X (nuevo convenio con bonificaciones): costo total por plan — 1c 7,14% · Plan Z 8,23% · 5c 12,64% · 9c 19,60% · 12c 24,44% · 15c 28,92%. Incluye interés promocional, arancel e impuestos.</div>
-  <div class="nota">12 cuotas Naranja: obligatoriamente SIN INTERÉS. El cliente paga el precio lista dividido 12; el comercio absorbe el costo del 24,44%.</div>
+  <div class="nota" id="nota12"></div>
   <div class="nota">Bancor: TNA 19%, UVA $1.822,24. Solo aplica a motos homologadas.</div>
   <div class="nota">Monopatines (KQi y XQi3) y bicis no tienen crédito Bancor.</div>
   <div class="nota">Cuota Simple NAVE (3 y 6c): CFT 9,84% / 18,66% a cargo del cliente. Con el toggle "sin interés", vos absorbés el TCC (7,23% / 13,57%).</div>
@@ -215,14 +225,26 @@ var NX_PLANES = [
   { label:'Plan Z',    cuotas:0,  costo:8.23,  nota:'El cliente elige cómo distribuir los pagos' },
   { label:'5 cuotas',  cuotas:5,  costo:12.64 },
   { label:'9 cuotas',  cuotas:9,  costo:19.60 },
-  { label:'12 cuotas', cuotas:12, costo:24.44, sinInteres:true },
+  { label:'12 cuotas', cuotas:12, costo:24.44 },
   { label:'15 cuotas', cuotas:15, costo:28.92 }
 ];
 
+// Promo Semana de la Movilidad Eléctrica: 12 cuotas SIN INTERÉS del 3 al 9 de agosto 2026.
+// Fuera de esas fechas, las 12 cuotas vuelven a la normalidad (costo a cargo del cliente).
+var PROMO_12_START = new Date(2026, 7, 3, 0, 0, 0);   // 3 ago 2026
+var PROMO_12_END   = new Date(2026, 7, 9, 23, 59, 59); // 9 ago 2026
+function promo12Activa() {
+  var now = new Date();
+  return now >= PROMO_12_START && now <= PROMO_12_END;
+}
+function esSinInteres(plan) {
+  return plan.cuotas === 12 && promo12Activa();
+}
+
 function nxTotal(base, plan) {
-  // 12 cuotas: obligatoriamente sin interés → el cliente paga el precio lista,
+  // Durante la promo, 12 cuotas sin interés: el cliente paga el precio lista,
   // el comercio absorbe el costo. El resto: costo total sobre la base.
-  if (plan.sinInteres) return base;
+  if (esSinInteres(plan)) return base;
   return base * (1 + plan.costo / 100);
 }
 
@@ -353,12 +375,12 @@ function buildCards() {
               valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">' + plan.nota + '</div>';
             } else if (plan.cuotas === 1) {
               valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">Pago único en POSNET</div>';
-            } else if (plan.sinInteres) {
+            } else if (esSinInteres(plan)) {
               valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div><div class="tcc-badge">SIN INTERÉS · costo ' + plan.costo.toFixed(2).replace('.', ',') + '% a tu cargo</div>';
             } else {
               valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div>';
             }
-            var lbl = plan.sinInteres ? plan.label + ' sin interés' : plan.label;
+            var lbl = esSinInteres(plan) ? plan.label + ' sin interés' : plan.label;
             return row(lbl, valHTML, 'naranja');
           }).join('');
         })()
@@ -531,7 +553,7 @@ function copiarWA(idx) {
       lines.push('• ' + plan.label + ': ' + peso(total) + ' _(el cliente distribuye los pagos)_');
     } else if (plan.cuotas === 1) {
       lines.push('• 1 cuota: ' + peso(total));
-    } else if (plan.sinInteres) {
+    } else if (esSinInteres(plan)) {
       lines.push('• ' + plan.label + ' *SIN INTERÉS*: ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')');
     } else {
       lines.push('• ' + plan.label + ': ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')');
@@ -613,6 +635,14 @@ document.querySelectorAll('.tab').forEach(function(tab) {
   var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   document.getElementById('subDate').textContent = 'Precios al ' + d.getDate() + ' de ' + months[d.getMonth()] + ' de ' + d.getFullYear();
 })();
+
+// Banner promo 12 sin interés y nota condicional
+if (promo12Activa()) {
+  document.getElementById('promoBanner').style.display = 'block';
+  document.getElementById('nota12').innerHTML = 'PROMO Semana Movilidad Eléctrica (3 al 9 ago): 12 cuotas Naranja SIN INTERÉS. El cliente paga el precio lista dividido 12; el comercio absorbe el costo del 24,44%.';
+} else {
+  document.getElementById('nota12').innerHTML = '12 cuotas Naranja: costo total 24,44% a cargo del cliente (la promo sin interés fue del 3 al 9 de agosto).';
+}
 
 buildCards();
 </script>
