@@ -83,8 +83,12 @@
     .sena-box{background:#fff8f2;border:1.5px solid #ffd9b8;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:none}
     .sena-box.on{display:block}
     .sena-box .sl{font-size:11px;color:#e85d00;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
-    .sena-box .sr{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#111}
+    .sena-box .sr{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:#111;margin-top:6px}
     .sena-box .sr span{color:#999;font-weight:500}
+    .entrega-wrap{display:flex;align-items:center;gap:2px;background:#fff;border:1.5px solid #e85d00;border-radius:8px;padding:5px 9px}
+    .entrega-wrap .esym{font-size:14px;font-weight:800;color:#e85d00}
+    .entrega-input{width:110px;border:none;background:transparent;font-size:16px;font-weight:800;color:#111;outline:none;font-family:inherit;text-align:right;padding:0}
+    .sena-hint{font-size:10px;color:#c99;margin-top:6px;line-height:1.4}
 
     /* NOTAS */
     .notas{width:100%;max-width:480px;margin-top:6px;background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 4px 20px rgba(0,0,0,.07)}
@@ -166,7 +170,7 @@
   <input type="checkbox" id="chkSena"/>
   <label class="tog-label" for="chkSena">
     <div>
-      <div class="tl">Con seña (50%)</div>
+      <div class="tl">Entrega + financiación</div>
       <div class="ts" id="togSub">Mostrando pago completo</div>
     </div>
     <div class="pill"></div>
@@ -284,32 +288,47 @@ var activeCat = 'all';
 var customPrices = {};
 var descuentos = {};
 var customContado = {};
+var entregaEfectivo = {};
 
 function buildCards() {
   var container = document.getElementById('cards');
   container.innerHTML = '';
 
   PRODUCTS.forEach(function(p, idx) {
-    var d = withSena ? p.sena : p.full;
     var hidden = (activeCat !== 'all' && activeCat !== p.cat) ? ' hidden' : '';
     // Precio efectivo: custom o lista original
     var precioEfectivo = customPrices[idx] || p.full.lista;
+    // Contado efectivo vigente (custom o derivado)
+    var contadoBase = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista);
+
+    // Entrega + financiación: la entrega se valúa a precio contado; el resto se
+    // financia sobre precio lista. La fracción entregada = entrega / contado.
+    var entregaDefault = Math.round(contadoBase * 0.5);
+    var entrega = withSena ? (entregaEfectivo[idx] != null ? entregaEfectivo[idx] : entregaDefault) : 0;
+    var fracEntrega = (withSena && contadoBase > 0) ? Math.min(entrega / contadoBase, 1) : 0;
+    var financiarBase = Math.round((1 - fracEntrega) * precioEfectivo);
 
     var bancorHTML = '';
     if (p.full.b72 || p.full.b36) {
-      var bancorRatio = precioEfectivo / p.full.lista;
-      var bd = withSena ? p.sena : p.full;
-      bd = { b72: Math.round(bd.b72 * bancorRatio), b36: Math.round(bd.b36 * bancorRatio) };
+      var bancorScale = financiarBase / p.full.lista;
+      var b72 = Math.round(p.full.b72 * bancorScale);
+      var b36 = Math.round(p.full.b36 * bancorScale);
       bancorHTML = '<div class="section-title">Bancor (cuota mensual)</div>'
-        + row('Bancor 72 cuotas', '<div class="prow-cuota">' + peso(bd.b72) + '/mes</div><div class="prow-total">72 meses</div>', 'azul')
-        + row('Bancor 36 cuotas', '<div class="prow-cuota">' + peso(bd.b36) + '/mes</div><div class="prow-total">36 meses</div>', 'azul');
+        + row('Bancor 72 cuotas', '<div class="prow-cuota">' + peso(b72) + '/mes</div><div class="prow-total">72 meses</div>', 'azul')
+        + row('Bancor 36 cuotas', '<div class="prow-cuota">' + peso(b36) + '/mes</div><div class="prow-total">36 meses</div>', 'azul');
     } else {
       bancorHTML = '<div class="section-title">Bancor</div>'
         + '<div class="prow"><div class="prow-lbl">Crédito Bancor</div><div class="na-badge">No aplica</div></div>';
     }
 
     var senaBoxHTML = withSena
-      ? '<div class="sena-box on"><div class="sl">Con seña — 50%</div><div class="sr"><span>Entrega inicial</span>' + peso(d.entrega) + '</div><div class="sr" style="margin-top:4px"><span>A financiar</span>' + peso(d.financiar) + '</div></div>'
+      ? '<div class="sena-box on">'
+        + '<div class="sl">Entrega + financiación</div>'
+        + '<div class="sr"><span>Entrega en efectivo</span>'
+        + '<div class="entrega-wrap"><span class="esym">$</span><input class="entrega-input" id="einput-' + idx + '" type="tel" inputmode="numeric" value="' + entrega + '" oninput="onEntregaInput(' + idx + ',this.value)" /></div></div>'
+        + '<div class="sr"><span>A financiar (sobre lista)</span><span style="color:#111;font-weight:800">' + peso(financiarBase) + '</span></div>'
+        + '<div class="sena-hint">La entrega descuenta sobre el precio contado; el resto se financia sobre el precio lista. Las cuotas de abajo ya son sobre el monto a financiar.</div>'
+        + '</div>'
       : '';
 
     var html = '<div class="card' + hidden + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
@@ -359,7 +378,7 @@ function buildCards() {
         })()
       + '<div class="section-title">Cuota Simple — NAVE (Galicia)</div>'
       + (function(){
-          var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
+          var base = financiarBase;
           if (sinInteres) {
             return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>' + pctLista(base, base), 'verde')
                  + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>' + pctLista(base, base), 'verde');
@@ -371,7 +390,7 @@ function buildCards() {
         })()
       + '<div class="section-title">Naranja X</div>'
       + (function(){
-          var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
+          var base = financiarBase;
           return NX_PLANES.map(function(plan) {
             var total = nxTotal(base, plan);
             var valHTML;
@@ -390,7 +409,7 @@ function buildCards() {
         })()
       + '<div class="section-title">NAVE — Galicia (12 cuotas)</div>'
       + (function(){
-          var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
+          var base = financiarBase;
           var nave = [
             { label:'12 cuotas', n:12, cft:65.24 }
           ];
@@ -500,10 +519,21 @@ function onContadoInput(idx, val) {
   if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
+function onEntregaInput(idx, val) {
+  var n = parseInt(val.replace(/\D/g, ''), 10);
+  if (n && n > 0) { entregaEfectivo[idx] = n; } else { delete entregaEfectivo[idx]; }
+  var scrollY = window.scrollY;
+  buildCards();
+  window.scrollTo(0, scrollY);
+  var input = document.getElementById('einput-' + idx);
+  if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+}
+
 function resetPrecio(idx) {
   delete customPrices[idx];
   delete descuentos[idx];
   delete customContado[idx];
+  delete entregaEfectivo[idx];
   var scrollY = window.scrollY;
   buildCards();
   window.scrollTo(0, scrollY);
@@ -511,19 +541,21 @@ function resetPrecio(idx) {
 
 function copiarWA(idx) {
   var p = PRODUCTS[idx];
-  var d = withSena ? p.sena : p.full;
   var precioEfectivo = customPrices[idx] || p.full.lista;
   var contadoEfectivo = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista);
-  var base = withSena ? Math.round(precioEfectivo * d.financiar / p.full.lista) : precioEfectivo;
+  var entregaDefault = Math.round(contadoEfectivo * 0.5);
+  var entrega = withSena ? (entregaEfectivo[idx] != null ? entregaEfectivo[idx] : entregaDefault) : 0;
+  var fracEntrega = (withSena && contadoEfectivo > 0) ? Math.min(entrega / contadoEfectivo, 1) : 0;
+  var base = withSena ? Math.round((1 - fracEntrega) * precioEfectivo) : precioEfectivo;
 
   var lines = [];
   lines.push('🛵 *' + p.name + '*');
   lines.push('');
 
   if (withSena) {
-    lines.push('📋 *Con seña (50%)*');
-    lines.push('• Entrega inicial: ' + peso(d.entrega));
-    lines.push('• Monto a financiar: ' + peso(d.financiar));
+    lines.push('📋 *Entrega + financiación*');
+    lines.push('• Entrega en efectivo: ' + peso(entrega));
+    lines.push('• A financiar (sobre lista): ' + peso(base));
     lines.push('');
   }
 
@@ -565,12 +597,12 @@ function copiarWA(idx) {
   });
   lines.push('');
 
-  // Bancor
+  // Bancor (escala según el monto financiado)
   if (p.full.b72 || p.full.b36) {
-    var bd = withSena ? p.sena : p.full;
+    var bScale = base / p.full.lista;
     lines.push('🏦 *Bancor*');
-    lines.push('• 36 cuotas: ' + peso(bd.b36) + '/mes');
-    lines.push('• 72 cuotas: ' + peso(bd.b72) + '/mes');
+    lines.push('• 36 cuotas: ' + peso(Math.round(p.full.b36 * bScale)) + '/mes');
+    lines.push('• 72 cuotas: ' + peso(Math.round(p.full.b72 * bScale)) + '/mes');
     lines.push('');
   }
 
@@ -615,7 +647,7 @@ function pctLista(total, base) {
 // Toggle seña
 document.getElementById('chkSena').addEventListener('change', function() {
   withSena = this.checked;
-  document.getElementById('togSub').textContent = withSena ? 'Mostrando precios con seña 50%' : 'Mostrando pago completo';
+  document.getElementById('togSub').textContent = withSena ? 'Entrega editable + resto financiado' : 'Mostrando pago completo';
   buildCards();
 });
 
