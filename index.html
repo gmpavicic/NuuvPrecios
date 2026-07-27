@@ -66,8 +66,11 @@
     /* Filas de cuotas */
     .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#bbb;margin:12px 0 8px}
 
-    .prow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8f8f8}
+    .prow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f8f8f8;gap:10px}
     .prow:last-child{border-bottom:none}
+    .prow-left{display:flex;align-items:center;gap:9px;min-width:0}
+    .sel-chk{width:20px;height:20px;flex-shrink:0;accent-color:#e85d00;cursor:pointer;margin:0}
+    .sel-chk-w{accent-color:#fff;width:22px;height:22px}
     .prow-lbl{font-size:13px;color:#555;font-weight:600}
     .prow-lbl small{display:block;font-size:11px;color:#bbb;font-weight:400;margin-top:1px}
     .prow-val{text-align:right}
@@ -98,6 +101,7 @@
     .nota:last-child{margin-bottom:0}
 
     .footer{margin-top:14px;font-size:11px;color:#bbb;text-align:center;width:100%;max-width:480px}
+    .tip-sel{width:100%;max-width:480px;margin:0 0 14px;font-size:12px;color:#777;background:#eef6ff;border:1px solid #cfe4ff;border-radius:10px;padding:9px 12px;line-height:1.4}
 
     /* Input precio ajustado */
     .precio-wrap{margin:0 0 14px;padding:12px 14px;background:#f9f9f9;border-radius:12px;border:2px solid #eee}
@@ -198,6 +202,7 @@
 </div>
 
 <!-- Cards -->
+<div class="tip-sel">💡 Tildá las opciones que quieras enviar y tocá <b>Copiar para WhatsApp</b>. Si no tildás ninguna, se manda la lista completa.</div>
 <div class="cards" id="cards"></div>
 
 <!-- Notas -->
@@ -273,13 +278,19 @@ var CAT_LABELS = { moto:'Moto', mono:'Monopatín', bici:'Bici eléctrica' };
 
 function peso(n) {
   if (!n && n !== 0) return '—';
-  var s = Math.round(n).toString();
+  return '$ ' + miles(Math.round(n));
+}
+
+// Separador de miles (sin símbolo). Acepta número o string; usa solo los dígitos.
+function miles(v) {
+  var s = String(v).replace(/\D/g, '');
+  if (!s) return '';
   var out = '';
   for (var i = s.length - 1, c = 0; i >= 0; i--, c++) {
     if (c > 0 && c % 3 === 0) out = '.' + out;
     out = s[i] + out;
   }
-  return '$ ' + out;
+  return out;
 }
 
 var withSena = false;
@@ -289,6 +300,13 @@ var customPrices = {};
 var descuentos = {};
 var customContado = {};
 var entregaEfectivo = {};
+var seleccion = {}; // opciones tildadas por producto para el texto de WhatsApp
+
+function isSel(idx, key) { return !!(seleccion[idx] && seleccion[idx][key]); }
+function toggleSel(idx, key, checked) {
+  if (!seleccion[idx]) seleccion[idx] = {};
+  if (checked) { seleccion[idx][key] = true; } else { delete seleccion[idx][key]; }
+}
 
 function buildCards() {
   var container = document.getElementById('cards');
@@ -314,8 +332,8 @@ function buildCards() {
       var b72 = Math.round(p.full.b72 * bancorScale);
       var b36 = Math.round(p.full.b36 * bancorScale);
       bancorHTML = '<div class="section-title">Bancor (cuota mensual)</div>'
-        + row('Bancor 72 cuotas', '<div class="prow-cuota">' + peso(b72) + '/mes</div><div class="prow-total">72 meses</div>', 'azul')
-        + row('Bancor 36 cuotas', '<div class="prow-cuota">' + peso(b36) + '/mes</div><div class="prow-total">36 meses</div>', 'azul');
+        + row('Bancor 72 cuotas', '<div class="prow-cuota">' + peso(b72) + '/mes</div><div class="prow-total">72 meses</div>', 'azul', 'b72', idx)
+        + row('Bancor 36 cuotas', '<div class="prow-cuota">' + peso(b36) + '/mes</div><div class="prow-total">36 meses</div>', 'azul', 'b36', idx);
     } else {
       bancorHTML = '<div class="section-title">Bancor</div>'
         + '<div class="prow"><div class="prow-lbl">Crédito Bancor</div><div class="na-badge">No aplica</div></div>';
@@ -325,7 +343,7 @@ function buildCards() {
       ? '<div class="sena-box on">'
         + '<div class="sl">Entrega + financiación</div>'
         + '<div class="sr"><span>Entrega en efectivo</span>'
-        + '<div class="entrega-wrap"><span class="esym">$</span><input class="entrega-input" id="einput-' + idx + '" type="tel" inputmode="numeric" value="' + entrega + '" oninput="onEntregaInput(' + idx + ',this.value)" /></div></div>'
+        + '<div class="entrega-wrap"><span class="esym">$</span><input class="entrega-input" id="einput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(entrega) + '" oninput="onEntregaInput(' + idx + ',this.value)" /></div></div>'
         + '<div class="sr"><span>A financiar (sobre lista)</span><span style="color:#111;font-weight:800">' + peso(financiarBase) + '</span></div>'
         + '<div class="sena-hint">La entrega descuenta sobre el precio contado; el resto se financia sobre el precio lista. Las cuotas de abajo ya son sobre el monto a financiar.</div>'
         + '</div>'
@@ -346,14 +364,14 @@ function buildCards() {
           return '<div class="precio-wrap' + (isModified ? ' modified' : '') + '" id="pwrap-' + idx + '">'
             + '<div class="precio-row">'
             + '<label>Precio lista</label>'
-            + '<input class="precio-input" id="pinput-' + idx + '" type="tel" inputmode="numeric" value="' + (customPrices[idx] || p.full.lista) + '" oninput="onPrecioInput(' + idx + ',this.value)" />'
+            + '<input class="precio-input" id="pinput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(customPrices[idx] || p.full.lista) + '" oninput="onPrecioInput(' + idx + ',this.value)" />'
             + (isModified ? '<button class="reset-btn" onclick="resetPrecio(' + idx + ')">Resetear</button>' : '')
             + '</div>'
             + '<div class="desc-row">'
             + '<div class="' + (dNom !== '' ? 'desc-field active' : 'desc-field') + '">'
             + '<span class="desc-lbl">Descuento $</span>'
             + '<div style="display:flex;align-items:center;gap:4px"><span class="desc-sym">-$</span>'
-            + '<input class="desc-input" id="dnom-' + idx + '" type="tel" inputmode="numeric" placeholder="0" value="' + dNom + '" oninput="onDescNominal(' + idx + ',this.value)" /></div>'
+            + '<input class="desc-input" id="dnom-' + idx + '" type="tel" inputmode="numeric" placeholder="0" value="' + (dNom !== '' ? miles(dNom) : '') + '" oninput="onDescNominal(' + idx + ',this.value)" /></div>'
             + '</div>'
             + '<div class="' + (dPct !== '' ? 'desc-field active' : 'desc-field') + '">'
             + '<span class="desc-lbl">Descuento %</span>'
@@ -372,20 +390,22 @@ function buildCards() {
           var descLine = disc > 0
             ? '<div style="font-size:11px;color:rgba(255,255,255,.9);margin-top:2px;font-weight:600">Descuento: -' + peso(disc) + ' (' + discPct.toFixed(1).replace('.', ',') + '%)</div>'
             : '<div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Tocá el monto para editar</div>';
-          return '<div class="contado-row"><div><div class="contado-lbl">Precio contado efectivo</div>' + descLine + '</div>'
+          return '<div class="contado-row"><div style="display:flex;align-items:center;gap:9px">'
+            + '<input type="checkbox" class="sel-chk sel-chk-w" ' + (isSel(idx, 'contado') ? 'checked ' : '') + 'onchange="toggleSel(' + idx + ',\'contado\',this.checked)"/>'
+            + '<div><div class="contado-lbl">Precio contado efectivo</div>' + descLine + '</div></div>'
             + '<div class="contado-input-wrap"><span class="csym">$</span>'
-            + '<input class="contado-input" id="cinput-' + idx + '" type="tel" inputmode="numeric" value="' + contadoMostrado + '" oninput="onContadoInput(' + idx + ',this.value)" /></div></div>';
+            + '<input class="contado-input" id="cinput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(contadoMostrado) + '" oninput="onContadoInput(' + idx + ',this.value)" /></div></div>';
         })()
       + '<div class="section-title">Cuota Simple — NAVE (Galicia)</div>'
       + (function(){
           var base = financiarBase;
           if (sinInteres) {
-            return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>' + pctLista(base, base), 'verde')
-                 + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>' + pctLista(base, base), 'verde');
+            return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>' + pctLista(base, base), 'verde', 'cs3', idx)
+                 + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>' + pctLista(base, base), 'verde', 'cs6', idx);
           } else {
             var t3 = base * 1.0984, t6 = base * 1.1866;
-            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 9,84%</div>' + pctLista(t3, base), 'verde')
-                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 18,66%</div>' + pctLista(t6, base), 'verde');
+            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 9,84%</div>' + pctLista(t3, base), 'verde', 'cs3', idx)
+                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 18,66%</div>' + pctLista(t6, base), 'verde', 'cs6', idx);
           }
         })()
       + '<div class="section-title">Naranja X</div>'
@@ -404,7 +424,7 @@ function buildCards() {
               valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div>' + pctLista(total, base);
             }
             var lbl = esSinInteres(plan) ? plan.label + ' sin interés' : plan.label;
-            return row(lbl, valHTML, 'naranja');
+            return row(lbl, valHTML, 'naranja', 'nx' + plan.cuotas, idx);
           }).join('');
         })()
       + '<div class="section-title">NAVE — Galicia (12 cuotas)</div>'
@@ -415,7 +435,7 @@ function buildCards() {
           ];
           return nave.map(function(pl) {
             var total = base * (1 + pl.cft/100);
-            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>' + pctLista(total, base), 'azul');
+            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>' + pctLista(total, base), 'azul', 'nave12', idx);
           }).join('');
         })()
       + bancorHTML
@@ -452,7 +472,7 @@ function onPrecioInput(idx, val) {
   buildCards();
   window.scrollTo(0, scrollY);
   var input = document.getElementById('pinput-' + idx);
-  if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  if (input) { input.value = miles(val); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
 function onDescNominal(idx, val) {
@@ -516,7 +536,7 @@ function onContadoInput(idx, val) {
   buildCards();
   window.scrollTo(0, scrollY);
   var input = document.getElementById('cinput-' + idx);
-  if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  if (input) { input.value = miles(val); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
 function onEntregaInput(idx, val) {
@@ -526,7 +546,7 @@ function onEntregaInput(idx, val) {
   buildCards();
   window.scrollTo(0, scrollY);
   var input = document.getElementById('einput-' + idx);
-  if (input) { input.value = val; input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+  if (input) { input.value = miles(val); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
 function resetPrecio(idx) {
@@ -548,6 +568,50 @@ function copiarWA(idx) {
   var fracEntrega = (withSena && contadoEfectivo > 0) ? Math.min(entrega / contadoEfectivo, 1) : 0;
   var base = withSena ? Math.round((1 - fracEntrega) * precioEfectivo) : precioEfectivo;
 
+  // Armar todas las opciones con su clave (mismas keys que los checkboxes)
+  var ops = [];
+  ops.push({ key:'contado', grupo:'contado', linea:'💵 *Contado efectivo:* ' + peso(contadoEfectivo) + '  _(lista ' + peso(precioEfectivo) + ')_' });
+
+  if (sinInteres) {
+    ops.push({ key:'cs3', grupo:'cs', linea:'• 3 cuotas sin interés: ' + peso(base/3) + '/mes _(costo a cargo del comercio)_' });
+    ops.push({ key:'cs6', grupo:'cs', linea:'• 6 cuotas sin interés: ' + peso(base/6) + '/mes _(costo a cargo del comercio)_' });
+  } else {
+    var t3 = base * 1.0984, t6 = base * 1.1866;
+    ops.push({ key:'cs3', grupo:'cs', linea:'• 3 cuotas: ' + peso(t3/3) + '/mes (Total: ' + peso(t3) + ')' });
+    ops.push({ key:'cs6', grupo:'cs', linea:'• 6 cuotas: ' + peso(t6/6) + '/mes (Total: ' + peso(t6) + ')' });
+  }
+
+  var naveTotal = base * (1 + 65.24/100);
+  ops.push({ key:'nave12', grupo:'nave', linea:'• 12 cuotas: ' + peso(naveTotal/12) + '/mes (Total: ' + peso(naveTotal) + ')' });
+
+  NX_PLANES.forEach(function(plan) {
+    var total = nxTotal(base, plan);
+    var l;
+    if (plan.cuotas === 0) {
+      l = '• ' + plan.label + ': ' + peso(total) + ' _(el cliente distribuye los pagos)_';
+    } else if (plan.cuotas === 1) {
+      l = '• 1 cuota: ' + peso(total);
+    } else if (esSinInteres(plan)) {
+      l = '• ' + plan.label + ' *SIN INTERÉS*: ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')';
+    } else {
+      l = '• ' + plan.label + ': ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')';
+    }
+    ops.push({ key:'nx' + plan.cuotas, grupo:'nx', linea:l });
+  });
+
+  if (p.full.b72 || p.full.b36) {
+    var bScale = base / p.full.lista;
+    ops.push({ key:'b36', grupo:'bancor', linea:'• 36 cuotas: ' + peso(Math.round(p.full.b36 * bScale)) + '/mes' });
+    ops.push({ key:'b72', grupo:'bancor', linea:'• 72 cuotas: ' + peso(Math.round(p.full.b72 * bScale)) + '/mes' });
+  }
+
+  // Filtrar por lo tildado. Si no hay nada tildado, se mandan todas.
+  var sel = seleccion[idx] || {};
+  var activos = Object.keys(sel).filter(function(k) { return sel[k]; });
+  var elegidas = activos.length ? ops.filter(function(o) { return activos.indexOf(o.key) >= 0; }) : ops;
+
+  var HDR = { cs:'🟢 *Cuota Simple — NAVE*', nave:'🔵 *NAVE — Galicia*', nx:'🟠 *Naranja X*', bancor:'🏦 *Bancor*' };
+
   var lines = [];
   lines.push('🛵 *' + p.name + '*');
   lines.push('');
@@ -559,53 +623,18 @@ function copiarWA(idx) {
     lines.push('');
   }
 
-  lines.push('💵 *Contado efectivo:* ' + peso(contadoEfectivo));
-  lines.push('_(Precio lista: ' + peso(precioEfectivo) + ')_');
-  lines.push('');
-
-  // Plan Simple
-  lines.push('🟢 *Cuota Simple — NAVE*');
-  if (sinInteres) {
-    lines.push('• 3 cuotas sin interés: ' + peso(base/3) + '/mes _(TCC 7,23% a cargo del comercio)_');
-    lines.push('• 6 cuotas sin interés: ' + peso(base/6) + '/mes _(TCC 13,57% a cargo del comercio)_');
-  } else {
-    var t3 = base * 1.0984, t6 = base * 1.1866;
-    lines.push('• 3 cuotas: ' + peso(t3/3) + '/mes (Total: ' + peso(t3) + ')');
-    lines.push('• 6 cuotas: ' + peso(t6/6) + '/mes (Total: ' + peso(t6) + ')');
-  }
-  lines.push('');
-
-  // NAVE 12
-  lines.push('🔵 *NAVE — Galicia*');
-  var naveTotal = base * (1 + 65.24/100);
-  lines.push('• 12 cuotas: ' + peso(naveTotal/12) + '/mes (Total: ' + peso(naveTotal) + ')');
-  lines.push('');
-
-  // Naranja X
-  lines.push('🟠 *Naranja X*');
-  NX_PLANES.forEach(function(plan) {
-    var total = nxTotal(base, plan);
-    if (plan.cuotas === 0) {
-      lines.push('• ' + plan.label + ': ' + peso(total) + ' _(el cliente distribuye los pagos)_');
-    } else if (plan.cuotas === 1) {
-      lines.push('• 1 cuota: ' + peso(total));
-    } else if (esSinInteres(plan)) {
-      lines.push('• ' + plan.label + ' *SIN INTERÉS*: ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')');
-    } else {
-      lines.push('• ' + plan.label + ': ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')');
+  var lastG = null, first = true;
+  elegidas.forEach(function(o) {
+    if (o.grupo !== lastG) {
+      lastG = o.grupo;
+      if (!first) lines.push('');
+      if (HDR[o.grupo]) lines.push(HDR[o.grupo]);
     }
+    lines.push(o.linea);
+    first = false;
   });
+
   lines.push('');
-
-  // Bancor (escala según el monto financiado)
-  if (p.full.b72 || p.full.b36) {
-    var bScale = base / p.full.lista;
-    lines.push('🏦 *Bancor*');
-    lines.push('• 36 cuotas: ' + peso(Math.round(p.full.b36 * bScale)) + '/mes');
-    lines.push('• 72 cuotas: ' + peso(Math.round(p.full.b72 * bScale)) + '/mes');
-    lines.push('');
-  }
-
   lines.push('_Nuuv Córdoba — Concesionario oficial NIU_');
 
   var texto = lines.join('\n');
@@ -631,8 +660,11 @@ function cerrarModal(e) {
   document.getElementById('waModal').classList.remove('on');
 }
 
-function row(lbl, valHTML, colorClass) {
-  return '<div class="prow"><div class="prow-lbl">' + lbl + '</div><div class="prow-val ' + colorClass + '">' + valHTML + '</div></div>';
+function row(lbl, valHTML, colorClass, selKey, idx) {
+  var chk = (selKey != null)
+    ? '<input type="checkbox" class="sel-chk" ' + (isSel(idx, selKey) ? 'checked ' : '') + 'onchange="toggleSel(' + idx + ',\'' + selKey + '\',this.checked)"/>'
+    : '';
+  return '<div class="prow"><div class="prow-left">' + chk + '<div class="prow-lbl">' + lbl + '</div></div><div class="prow-val ' + colorClass + '">' + valHTML + '</div></div>';
 }
 
 // Badge con el % sobre precio lista que termina pagando el cliente
