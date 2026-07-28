@@ -40,14 +40,20 @@
     .card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.07)}
     .card.hidden{display:none}
 
-    .card-head{padding:18px 20px 14px;border-bottom:1px solid #f0f0f0}
+    .card-head{padding:16px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:12px;-webkit-tap-highlight-color:transparent}
+    .card.open .card-head{border-bottom:1px solid #f0f0f0}
+    .card-head-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .card-head-price{font-size:15px;font-weight:900;color:#111;white-space:nowrap}
+    .card.open .card-head-price{display:none}
+    .chev{font-size:22px;color:#ccc;font-weight:400;transition:transform .2s;line-height:1}
+    .card.open .chev{transform:rotate(90deg);color:#e85d00}
+    .prices{padding:14px 20px;display:none}
+    .card.open .prices{display:block}
     .card-name{font-size:18px;font-weight:900;color:#111}
     .cat-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;background:#f2f4f7;color:#999;border-radius:99px;padding:3px 10px;margin-bottom:6px}
     .cat-badge.moto{background:#fff0e0;color:#e85d00}
     .cat-badge.mono{background:#e8f4ff;color:#1a6eb5}
     .cat-badge.bici{background:#e8fff0;color:#1a8c4e}
-
-    .prices{padding:14px 20px}
 
     /* Precio contado destacado */
     .contado-row{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#e85d00,#ff8800);border-radius:12px;padding:14px 16px;margin-bottom:12px}
@@ -301,6 +307,13 @@ var descuentos = {};
 var customContado = {};
 var entregaEfectivo = {};
 var seleccion = {}; // opciones tildadas por producto para el texto de WhatsApp
+var expandido = {}; // qué productos están desplegados
+
+function toggleCard(idx) {
+  expandido[idx] = !expandido[idx];
+  var card = document.getElementById('card-' + idx);
+  if (card) card.classList.toggle('open', expandido[idx]);
+}
 
 function isSel(idx, key) { return !!(seleccion[idx] && seleccion[idx][key]); }
 function toggleSel(idx, key, checked) {
@@ -349,10 +362,13 @@ function buildCards() {
         + '</div>'
       : '';
 
-    var html = '<div class="card' + hidden + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
-      + '<div class="card-head">'
+    var html = '<div class="card' + hidden + (expandido[idx] ? ' open' : '') + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
+      + '<div class="card-head" onclick="toggleCard(' + idx + ')">'
+      + '<div>'
       + '<div class="cat-badge ' + p.cat + '">' + CAT_LABELS[p.cat] + '</div>'
       + '<div class="card-name">' + p.name + '</div>'
+      + '</div>'
+      + '<div class="card-head-right"><div class="card-head-price">' + peso(precioEfectivo) + '</div><span class="chev">›</span></div>'
       + '</div>'
       + '<div class="prices">'
       + senaBoxHTML
