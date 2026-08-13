@@ -170,11 +170,6 @@
   <div class="sub" id="subDate">Cargando fecha...</div>
 </div>
 
-<div class="promo-banner" id="promoBanner" style="display:none">
-  <div class="pt">⚡ Semana de la Movilidad Eléctrica</div>
-  <div class="ps">12 cuotas SIN INTERÉS · del 3 al 9 de agosto</div>
-</div>
-
 <!-- Toggle seña -->
 <div class="tog-wrap">
   <input type="checkbox" id="chkSena"/>
@@ -216,11 +211,10 @@
   <div class="notas-title">Aclaraciones</div>
   <div class="nota">Precio contado: valor que recibe la agencia.</div>
   <div class="nota">Naranja X (nuevo convenio con bonificaciones): costo total por plan — 1c 7,14% · Plan Z 8,23% · 5c 12,64% · 9c 19,60% · 12c 24,44% · 15c 28,92%. Incluye interés promocional, arancel e impuestos.</div>
-  <div class="nota" id="nota12"></div>
   <div class="nota">Bancor: TNA 19%, UVA $1.822,24. Solo aplica a motos homologadas.</div>
   <div class="nota">Monopatines (KQi y XQi3) y bicis no tienen crédito Bancor.</div>
-  <div class="nota">Cuota Simple NAVE (3 y 6c): CFT 9,84% / 18,66% a cargo del cliente. Con el toggle "sin interés", vos absorbés el TCC (7,23% / 13,57%).</div>
-  <div class="nota">NAVE regular (9 y 12c): CFT 47,32% / 65,24% a cargo del cliente.</div>
+  <div class="nota">Cuota Simple NAVE (3 y 6c): CFT 7,64% / 13,89% a cargo del cliente. Con el toggle "sin interés", vos absorbés el TCC (7,23% / 13,57%).</div>
+  <div class="nota">NAVE (1, 9 y 12c): 1c sin costo · CFT 29,76% / 40,24% a cargo del cliente.</div>
 </div>
 
 <div class="footer" id="footer">Nuuv Córdoba — uso interno vendedores</div>
@@ -248,34 +242,20 @@ var NX_PLANES = [
   { label:'15 cuotas', cuotas:15, costo:28.92 }
 ];
 
-// Promo Semana de la Movilidad Eléctrica: 12 cuotas SIN INTERÉS del 3 al 9 de agosto 2026.
-// Fuera de esas fechas, las 12 cuotas vuelven a la normalidad (costo a cargo del cliente).
-var PROMO_12_START = new Date(2026, 7, 3, 0, 0, 0);   // 3 ago 2026
-var PROMO_12_END   = new Date(2026, 7, 9, 23, 59, 59); // 9 ago 2026
-function promo12Activa() {
-  var now = new Date();
-  return now >= PROMO_12_START && now <= PROMO_12_END;
-}
-function esSinInteres(plan) {
-  return plan.cuotas === 12 && promo12Activa();
-}
-
 function nxTotal(base, plan) {
-  // Durante la promo, 12 cuotas sin interés: el cliente paga el precio lista,
-  // el comercio absorbe el costo. El resto: costo total sobre la base.
-  if (esSinInteres(plan)) return base;
+  // Costo total del plan (ya incluye interés + arancel + impuestos) sobre la base.
   return base * (1 + plan.costo / 100);
 }
 
 var PRODUCTS = [
-  { cat:'moto', name:'M+ Sport',     full:{ lista:4290000,  contado:3900000,  b72:112000, b36:180000 }, sena:{ entrega:1950000, financiar:2145000, b72:56000,  b36:90000  } },
-  { cat:'moto', name:'NQi Sport EXT',full:{ lista:5588000,  contado:5080000,  b72:145000, b36:235000 }, sena:{ entrega:2540000, financiar:2794000, b72:72500,  b36:117500 } },
-  { cat:'moto', name:'UQi GT STD',   full:{ lista:6226000,  contado:5660000,  b72:162000, b36:261000 }, sena:{ entrega:2830000, financiar:3113000, b72:81000,  b36:130500 } },
-  { cat:'moto', name:'Gova 03',      full:{ lista:6600000,  contado:6000000,  b72:172000, b36:277000 }, sena:{ entrega:3000000, financiar:3300000, b72:86000,  b36:138500 } },
-  { cat:'moto', name:'NQi GTS 80',   full:{ lista:7260000,  contado:6600000,  b72:189000, b36:305000 }, sena:{ entrega:3300000, financiar:3630000, b72:94500,  b36:152500 } },
+  { cat:'moto', name:'M+ Sport',     full:{ lista:4340000,  contado:3900000,  b72:112000, b36:180000 }, sena:{ entrega:1950000, financiar:2145000, b72:56000,  b36:90000  } },
+  { cat:'moto', name:'NQi Sport EXT',full:{ lista:5670000,  contado:5100000,  b72:145000, b36:235000 }, sena:{ entrega:2540000, financiar:2794000, b72:72500,  b36:117500 } },
+  { cat:'moto', name:'UQi GT STD',   full:{ lista:6340000,  contado:5700000,  b72:162000, b36:261000 }, sena:{ entrega:2830000, financiar:3113000, b72:81000,  b36:130500 } },
+  { cat:'moto', name:'Gova 03',      full:{ lista:6670000,  contado:6000000,  b72:172000, b36:277000 }, sena:{ entrega:3000000, financiar:3300000, b72:86000,  b36:138500 } },
+  { cat:'moto', name:'NQi GTS 80',   full:{ lista:7340000,  contado:6600000,  b72:189000, b36:305000 }, sena:{ entrega:3300000, financiar:3630000, b72:94500,  b36:152500 } },
   { cat:'moto', name:'XQi3 Wild',    full:{ lista:14300000, contado:13000000, b72:null,   b36:null   }, sena:{ entrega:6500000, financiar:7150000, b72:null,   b36:null   } },
-  { cat:'mono', name:'KQi 2 Pro',    full:{ lista:1925000,  contado:1750000,  b72:null,   b36:null   }, sena:{ entrega:875000,  financiar:962500,  b72:null,   b36:null   } },
-  { cat:'mono', name:'KQi 3 Pro',    full:{ lista:2145000,  contado:1950000,  b72:null,   b36:null   }, sena:{ entrega:975000,  financiar:1072500, b72:null,   b36:null   } },
+  { cat:'mono', name:'KQi 2 Pro',    full:{ lista:1950000,  contado:1750000,  b72:null,   b36:null   }, sena:{ entrega:875000,  financiar:962500,  b72:null,   b36:null   } },
+  { cat:'mono', name:'KQi 3 Pro',    full:{ lista:2170000,  contado:1950000,  b72:null,   b36:null   }, sena:{ entrega:975000,  financiar:1072500, b72:null,   b36:null   } },
   { cat:'bici', name:'Emperor R26',  full:{ lista:2200000,  contado:1800000,  b72:null,   b36:null   }, sena:{ entrega:900000,  financiar:1100000, b72:null,   b36:null   } },
   { cat:'bici', name:'Rage R29',     full:{ lista:2300000,  contado:1900000,  b72:null,   b36:null   }, sena:{ entrega:950000,  financiar:1150000, b72:null,   b36:null   } }
 ];
@@ -419,9 +399,9 @@ function buildCards() {
             return row('3 cuotas sin interés', '<div class="prow-cuota">' + peso(base/3) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 7,23% a tu cargo</div>' + pctLista(base, base), 'verde', 'cs3', idx)
                  + row('6 cuotas sin interés', '<div class="prow-cuota">' + peso(base/6) + '/mes</div><div class="prow-total">Total: ' + peso(base) + '</div><div class="tcc-badge">TCC 13,57% a tu cargo</div>' + pctLista(base, base), 'verde', 'cs6', idx);
           } else {
-            var t3 = base * 1.0984, t6 = base * 1.1866;
-            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 9,84%</div>' + pctLista(t3, base), 'verde', 'cs3', idx)
-                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 18,66%</div>' + pctLista(t6, base), 'verde', 'cs6', idx);
+            var t3 = base * 1.0764, t6 = base * 1.1389;
+            return row('3 cuotas', '<div class="prow-cuota">' + peso(t3/3) + '/mes</div><div class="prow-total">Total: ' + peso(t3) + ' · CFT 7,64%</div>' + pctLista(t3, base), 'verde', 'cs3', idx)
+                 + row('6 cuotas', '<div class="prow-cuota">' + peso(t6/6) + '/mes</div><div class="prow-total">Total: ' + peso(t6) + ' · CFT 13,89%</div>' + pctLista(t6, base), 'verde', 'cs6', idx);
           }
         })()
       + '<div class="section-title">Naranja X</div>'
@@ -434,24 +414,26 @@ function buildCards() {
               valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">' + plan.nota + '</div>' + pctLista(total, base);
             } else if (plan.cuotas === 1) {
               valHTML = '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">Pago único en POSNET</div>' + pctLista(total, base);
-            } else if (esSinInteres(plan)) {
-              valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div><div class="tcc-badge">SIN INTERÉS · costo ' + plan.costo.toFixed(2).replace('.', ',') + '% a tu cargo</div>';
             } else {
               valHTML = '<div class="prow-cuota">' + peso(total/plan.cuotas) + '/mes</div><div class="prow-total">Total POSNET: ' + peso(total) + '</div>' + pctLista(total, base);
             }
-            var lbl = esSinInteres(plan) ? plan.label + ' sin interés' : plan.label;
-            return row(lbl, valHTML, 'naranja', 'nx' + plan.cuotas, idx);
+            return row(plan.label, valHTML, 'naranja', 'nx' + plan.cuotas, idx);
           }).join('');
         })()
-      + '<div class="section-title">NAVE — Galicia (12 cuotas)</div>'
+      + '<div class="section-title">NAVE — Galicia</div>'
       + (function(){
           var base = financiarBase;
           var nave = [
-            { label:'12 cuotas', n:12, cft:65.24 }
+            { label:'1 cuota',   n:1,  cft:0.00,  key:'nave1'  },
+            { label:'9 cuotas',  n:9,  cft:29.76, key:'nave9'  },
+            { label:'12 cuotas', n:12, cft:40.24, key:'nave12' }
           ];
           return nave.map(function(pl) {
             var total = base * (1 + pl.cft/100);
-            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>' + pctLista(total, base), 'azul', 'nave12', idx);
+            if (pl.n === 1) {
+              return row(pl.label, '<div class="prow-cuota">' + peso(total) + '</div><div class="prow-total">Pago único · sin costo financiero</div>' + pctLista(total, base), 'azul', pl.key, idx);
+            }
+            return row(pl.label, '<div class="prow-cuota">' + peso(total/pl.n) + '/mes</div><div class="prow-total">Total: ' + peso(total) + ' · CFT ' + pl.cft.toFixed(2).replace('.',',') + '%</div>' + pctLista(total, base), 'azul', pl.key, idx);
           }).join('');
         })()
       + bancorHTML
@@ -592,13 +574,16 @@ function copiarWA(idx) {
     ops.push({ key:'cs3', grupo:'cs', linea:'• 3 cuotas sin interés: ' + peso(base/3) + '/mes _(costo a cargo del comercio)_' });
     ops.push({ key:'cs6', grupo:'cs', linea:'• 6 cuotas sin interés: ' + peso(base/6) + '/mes _(costo a cargo del comercio)_' });
   } else {
-    var t3 = base * 1.0984, t6 = base * 1.1866;
+    var t3 = base * 1.0764, t6 = base * 1.1389;
     ops.push({ key:'cs3', grupo:'cs', linea:'• 3 cuotas: ' + peso(t3/3) + '/mes (Total: ' + peso(t3) + ')' });
     ops.push({ key:'cs6', grupo:'cs', linea:'• 6 cuotas: ' + peso(t6/6) + '/mes (Total: ' + peso(t6) + ')' });
   }
 
-  var naveTotal = base * (1 + 65.24/100);
-  ops.push({ key:'nave12', grupo:'nave', linea:'• 12 cuotas: ' + peso(naveTotal/12) + '/mes (Total: ' + peso(naveTotal) + ')' });
+  var nave1 = base;
+  var nave9 = base * 1.2976, nave12 = base * 1.4024;
+  ops.push({ key:'nave1',  grupo:'nave', linea:'• 1 cuota: ' + peso(nave1) + ' _(sin costo financiero)_' });
+  ops.push({ key:'nave9',  grupo:'nave', linea:'• 9 cuotas: ' + peso(nave9/9) + '/mes (Total: ' + peso(nave9) + ')' });
+  ops.push({ key:'nave12', grupo:'nave', linea:'• 12 cuotas: ' + peso(nave12/12) + '/mes (Total: ' + peso(nave12) + ')' });
 
   NX_PLANES.forEach(function(plan) {
     var total = nxTotal(base, plan);
@@ -607,8 +592,6 @@ function copiarWA(idx) {
       l = '• ' + plan.label + ': ' + peso(total) + ' _(el cliente distribuye los pagos)_';
     } else if (plan.cuotas === 1) {
       l = '• 1 cuota: ' + peso(total);
-    } else if (esSinInteres(plan)) {
-      l = '• ' + plan.label + ' *SIN INTERÉS*: ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')';
     } else {
       l = '• ' + plan.label + ': ' + peso(total/plan.cuotas) + '/mes (Total: ' + peso(total) + ')';
     }
@@ -729,13 +712,6 @@ document.querySelectorAll('.tab').forEach(function(tab) {
   document.getElementById('subDate').textContent = 'Precios al ' + d.getDate() + ' de ' + months[d.getMonth()] + ' de ' + d.getFullYear();
 })();
 
-// Banner promo 12 sin interés y nota condicional
-if (promo12Activa()) {
-  document.getElementById('promoBanner').style.display = 'block';
-  document.getElementById('nota12').innerHTML = 'PROMO Semana Movilidad Eléctrica (3 al 9 ago): 12 cuotas Naranja SIN INTERÉS. El cliente paga el precio lista dividido 12; el comercio absorbe el costo del 24,44%.';
-} else {
-  document.getElementById('nota12').innerHTML = '12 cuotas Naranja: costo total 24,44% a cargo del cliente (la promo sin interés fue del 3 al 9 de agosto).';
-}
 
 buildCards();
 </script>
