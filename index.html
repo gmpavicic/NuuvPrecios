@@ -156,6 +156,16 @@
     #chkSinInt:checked ~ .tog-verde .pill-verde{background:#1a8c4e}
     #chkSinInt:checked ~ .tog-verde .pill-verde::after{left:23px}
 
+    /* Toggle F&F (violeta) */
+    #chkFF{display:none}
+    .tog-ff{background:#f6f0ff;border-color:#d9c2f5}
+    #chkFF:checked ~ .tog-ff{background:#efe3ff;border-color:#7b2ff7}
+    #chkFF:checked ~ .tog-ff .tl{color:#7b2ff7}
+    #chkFF:checked ~ .tog-ff .ts{color:#7b2ff7;font-weight:600}
+    .pill-ff{background:#ddd}
+    #chkFF:checked ~ .tog-ff .pill-ff{background:#7b2ff7}
+    #chkFF:checked ~ .tog-ff .pill-ff::after{left:23px}
+
     .tcc-badge{display:inline-block;font-size:10px;font-weight:700;background:#fff3cd;color:#856404;border-radius:6px;padding:2px 7px;margin-top:3px}
     .pct-badge{display:inline-block;font-size:10px;font-weight:800;border-radius:6px;padding:2px 7px;margin-top:3px}
     .pct-mas{background:#fdecec;color:#c0392b}
@@ -168,6 +178,18 @@
 <div class="header">
   <div class="brand">NUUV <span>·</span> Lista de Precios</div>
   <div class="sub" id="subDate">Cargando fecha...</div>
+</div>
+
+<!-- Toggle F&F -->
+<div class="tog-wrap">
+  <input type="checkbox" id="chkFF"/>
+  <label class="tog-label tog-ff" for="chkFF">
+    <div>
+      <div class="tl">Modo F&amp;F (amigos y familia)</div>
+      <div class="ts" id="togFFSub">Precios normales</div>
+    </div>
+    <div class="pill pill-ff"></div>
+  </label>
 </div>
 
 <!-- Toggle seña -->
@@ -281,6 +303,8 @@ function miles(v) {
 
 var withSena = false;
 var sinInteres = false;
+var ffMode = false; // Amigos y familia: 10% off sobre el contado efectivo
+var FF_OFF = 0.10;
 var activeCat = 'all';
 var customPrices = {};
 var descuentos = {};
@@ -309,8 +333,9 @@ function buildCards() {
     var hidden = (activeCat !== 'all' && activeCat !== p.cat) ? ' hidden' : '';
     // Precio efectivo: custom o lista original
     var precioEfectivo = customPrices[idx] || p.full.lista;
-    // Contado efectivo vigente (custom o derivado)
-    var contadoBase = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista);
+    // Contado efectivo vigente (custom o derivado). En modo F&F, 10% off sobre el contado.
+    var ffFactor = ffMode ? (1 - FF_OFF) : 1;
+    var contadoBase = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista * ffFactor);
 
     // Entrega + financiación: la entrega se valúa a precio contado; el resto se
     // financia sobre precio lista. La fracción entregada = entrega / contado.
@@ -379,16 +404,16 @@ function buildCards() {
             + '</div>';
         })()
       + (function(){
-          var contadoAuto = Math.round(precioEfectivo * p.full.contado / p.full.lista);
-          var contadoMostrado = (customContado[idx] != null) ? customContado[idx] : contadoAuto;
+          var contadoMostrado = contadoBase;
           var disc = p.full.contado - contadoMostrado;
           var discPct = disc / p.full.contado * 100;
+          var lbl = ffMode ? 'Precio contado F&F (-10%)' : 'Precio contado efectivo';
           var descLine = disc > 0
             ? '<div style="font-size:11px;color:rgba(255,255,255,.9);margin-top:2px;font-weight:600">Descuento: -' + peso(disc) + ' (' + discPct.toFixed(1).replace('.', ',') + '%)</div>'
             : '<div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Tocá el monto para editar</div>';
           return '<div class="contado-row"><div style="display:flex;align-items:center;gap:9px">'
             + '<input type="checkbox" class="sel-chk sel-chk-w" ' + (isSel(idx, 'contado') ? 'checked ' : '') + 'onchange="toggleSel(' + idx + ',\'contado\',this.checked)"/>'
-            + '<div><div class="contado-lbl">Precio contado efectivo</div>' + descLine + '</div></div>'
+            + '<div><div class="contado-lbl">' + lbl + '</div>' + descLine + '</div></div>'
             + '<div class="contado-input-wrap"><span class="csym">$</span>'
             + '<input class="contado-input" id="cinput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(contadoMostrado) + '" oninput="onContadoInput(' + idx + ',this.value)" /></div></div>';
         })()
@@ -560,7 +585,8 @@ function resetPrecio(idx) {
 function copiarWA(idx) {
   var p = PRODUCTS[idx];
   var precioEfectivo = customPrices[idx] || p.full.lista;
-  var contadoEfectivo = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista);
+  var ffFactor = ffMode ? (1 - FF_OFF) : 1;
+  var contadoEfectivo = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista * ffFactor);
   var entregaDefault = Math.round(contadoEfectivo * 0.5);
   var entrega = withSena ? (entregaEfectivo[idx] != null ? entregaEfectivo[idx] : entregaDefault) : 0;
   var fracEntrega = (withSena && contadoEfectivo > 0) ? Math.min(entrega / contadoEfectivo, 1) : 0;
@@ -568,7 +594,7 @@ function copiarWA(idx) {
 
   // Armar todas las opciones con su clave (mismas keys que los checkboxes)
   var ops = [];
-  ops.push({ key:'contado', grupo:'contado', linea:'💵 *Contado efectivo:* ' + peso(contadoEfectivo) + '  _(lista ' + peso(precioEfectivo) + ')_' });
+  ops.push({ key:'contado', grupo:'contado', linea:'💵 *Contado' + (ffMode ? ' F&F' : '') + ':* ' + peso(contadoEfectivo) + '  _(lista ' + peso(precioEfectivo) + ')_' });
 
   if (sinInteres) {
     ops.push({ key:'cs3', grupo:'cs', linea:'• 3 cuotas sin interés: ' + peso(base/3) + '/mes _(costo a cargo del comercio)_' });
@@ -674,6 +700,13 @@ function pctLista(total, base) {
   var txt = Math.abs(pct) < 0.05 ? 'sin recargo' : signo + pct.toFixed(1).replace('.', ',') + '% s/ lista';
   return '<span class="pct-badge ' + cls + '">' + txt + '</span>';
 }
+
+// Toggle F&F
+document.getElementById('chkFF').addEventListener('change', function() {
+  ffMode = this.checked;
+  document.getElementById('togFFSub').textContent = ffMode ? '10% off en contado · financiación normal' : 'Precios normales';
+  buildCards();
+});
 
 // Toggle seña
 document.getElementById('chkSena').addEventListener('change', function() {
