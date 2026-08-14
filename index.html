@@ -735,6 +735,7 @@ function copiarWA(idx) {
     var txtU = '🛵 *' + p.name + '*\n\n'
       + '💵 *Contado en USD' + (ffMode ? ' (F&F)' : '') + ':* ' + usd(contadoEfectivo / usdRate) + '\n'
       + '_(≈ ' + peso(contadoEfectivo) + ' · dólar $' + miles(usdRate) + ')_\n\n'
+      + '_Precios orientativos. Pueden variar sin previo aviso y están sujetos a aprobación crediticia._\n\n'
       + '_Nuuv Córdoba — Concesionario oficial NIU_';
     document.getElementById('waTexto').value = txtU;
     document.getElementById('modalCopyBtn').textContent = 'Copiar todo';
@@ -816,6 +817,8 @@ function copiarWA(idx) {
     first = false;
   });
 
+  lines.push('');
+  lines.push('_Precios y cuotas orientativos. Pueden variar sin previo aviso y están sujetos a aprobación crediticia._');
   lines.push('');
   lines.push('_Nuuv Córdoba — Concesionario oficial NIU_');
 
