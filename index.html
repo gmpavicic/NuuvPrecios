@@ -115,6 +115,8 @@
     .usd-val{font-size:30px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1.1;margin-top:2px}
     .usd-ref{font-size:12px;color:rgba(255,255,255,.85);font-weight:600;margin-top:3px}
     .usd-note{font-size:12px;color:#999;text-align:center;padding:2px 0 4px}
+    .usd-warn{color:#c0392b;font-weight:700;background:#fff0f0;border-radius:8px;padding:8px 10px}
+    .usd-entry-warn{border-color:#c0392b !important;background:#fff0f0 !important}
 
     /* Input precio ajustado */
     .precio-wrap{margin:0 0 14px;padding:12px 14px;background:#f9f9f9;border-radius:12px;border:2px solid #eee}
@@ -507,6 +509,10 @@ function buildCards() {
       var usdEntry = entregaUsd[idx] != null ? entregaUsd[idx] : 0;
       var usdEnArs = Math.round(usdEntry * usdRate);
       var saldoPesos = Math.max(contadoBase - usdEnArs, 0);
+      var excede = usdEntry > 0 && usdEnArs > contadoBase;
+      var notaMix = excede
+        ? '<div class="usd-note usd-warn">⚠️ Los ' + usd(usdEntry) + ' (≈ ' + peso(usdEnArs) + ') superan el precio contado. Revisá el monto en dólares.</div>'
+        : '<div class="usd-note">Pago contado: ' + usd(usdEntry) + ' en dólares + ' + peso(saldoPesos) + ' en pesos. Sin financiación.</div>';
       var htmlM = '<div class="card' + hidden + (expandido[idx] ? ' open' : '') + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
         + '<div class="card-head" onclick="toggleCard(' + idx + ')">'
         + '<div><div class="cat-badge ' + p.cat + '">' + CAT_LABELS[p.cat] + '</div><div class="card-name">' + p.name + '</div></div>'
@@ -515,9 +521,9 @@ function buildCards() {
         + '<div class="prices">'
         + '<div class="mix-row"><div class="ml">Precio contado' + (ffMode ? ' (F&F -10%)' : '') + '</div><div style="font-weight:900;color:#111;font-size:17px">' + peso(contadoBase) + '</div></div>'
         + '<div class="mix-row"><div class="ml">Paga en dólares<small>dólar $' + miles(usdRate) + ' = ' + peso(usdEnArs) + '</small></div>'
-        + '<div class="usd-entry"><span>US$</span><input id="uinput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(usdEntry) + '" oninput="onEntregaUsdInput(' + idx + ',this.value)" /></div></div>'
+        + '<div class="usd-entry' + (excede ? ' usd-entry-warn' : '') + '"><span>US$</span><input id="uinput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(usdEntry) + '" oninput="onEntregaUsdInput(' + idx + ',this.value)" /></div></div>'
         + '<div class="mix-saldo"><span class="sl">Saldo en pesos</span><span class="sv">' + peso(saldoPesos) + '</span></div>'
-        + '<div class="usd-note">Pago contado: ' + usd(usdEntry) + ' en dólares + ' + peso(saldoPesos) + ' en pesos. Sin financiación.</div>'
+        + notaMix
         + waBtn(idx)
         + '</div></div>';
       container.insertAdjacentHTML('beforeend', htmlM);
