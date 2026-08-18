@@ -164,14 +164,23 @@
     #chkSinInt:checked ~ .tog-verde .pill-verde::after{left:23px}
 
     /* Toggle USD (teal) */
-    #chkUsd{display:none}
+    #chkUsd, #chkMix{display:none}
     .tog-usd{background:#e9fbf6;border-color:#b8ece0}
-    #chkUsd:checked ~ .tog-usd{background:#d7f7ee;border-color:#0f9e83}
-    #chkUsd:checked ~ .tog-usd .tl{color:#0f9e83}
-    #chkUsd:checked ~ .tog-usd .ts{color:#0f9e83;font-weight:600}
+    #chkUsd:checked ~ .tog-usd, #chkMix:checked ~ .tog-usd{background:#d7f7ee;border-color:#0f9e83}
+    #chkUsd:checked ~ .tog-usd .tl, #chkMix:checked ~ .tog-usd .tl{color:#0f9e83}
+    #chkUsd:checked ~ .tog-usd .ts, #chkMix:checked ~ .tog-usd .ts{color:#0f9e83;font-weight:600}
     .pill-usd{background:#ddd}
-    #chkUsd:checked ~ .tog-usd .pill-usd{background:#0f9e83}
-    #chkUsd:checked ~ .tog-usd .pill-usd::after{left:23px}
+    #chkUsd:checked ~ .tog-usd .pill-usd, #chkMix:checked ~ .tog-usd .pill-usd{background:#0f9e83}
+    #chkUsd:checked ~ .tog-usd .pill-usd::after, #chkMix:checked ~ .tog-usd .pill-usd::after{left:23px}
+    .mix-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 2px;border-bottom:1px solid #f0f0f0}
+    .mix-row .ml{font-size:13px;font-weight:700;color:#555}
+    .mix-row .ml small{display:block;font-size:11px;color:#aaa;font-weight:500;margin-top:1px}
+    .usd-entry{display:flex;align-items:center;gap:2px;background:#e9fbf6;border:1.5px solid #0f9e83;border-radius:8px;padding:5px 9px}
+    .usd-entry span{font-size:14px;font-weight:800;color:#0f9e83}
+    .usd-entry input{width:80px;border:none;background:transparent;font-size:16px;font-weight:800;color:#111;outline:none;font-family:inherit;text-align:right}
+    .mix-saldo{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#e85d00,#ff8800);border-radius:12px;padding:13px 16px;margin:12px 0 4px}
+    .mix-saldo .sl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.85)}
+    .mix-saldo .sv{font-size:22px;font-weight:900;color:#fff}
     /* Barra cotización */
     .rate-bar{width:100%;max-width:480px;margin:0 0 16px;padding:10px 14px;background:#fff;border:1.5px solid #b8ece0;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
     .rate-left{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#0f9e83;flex-wrap:wrap}
@@ -217,6 +226,18 @@
   </label>
 </div>
 
+<!-- Toggle pago mixto USD + pesos -->
+<div class="tog-wrap">
+  <input type="checkbox" id="chkMix"/>
+  <label class="tog-label tog-usd" for="chkMix">
+    <div>
+      <div class="tl">Contado en USD + pesos</div>
+      <div class="ts" id="togMixSub">Parte en dólares, saldo en pesos · sin financiación</div>
+    </div>
+    <div class="pill pill-usd"></div>
+  </label>
+</div>
+
 <!-- Barra cotización dólar -->
 <div class="rate-bar" id="rateBar" style="display:none">
   <div class="rate-left">Dólar
@@ -231,7 +252,7 @@
   <input type="checkbox" id="chkFF"/>
   <label class="tog-label tog-ff" for="chkFF">
     <div>
-      <div class="tl">Modo F&amp;F (amigos y familia)</div>
+      <div class="tl">Familia y amigos</div>
       <div class="ts" id="togFFSub">Precios normales</div>
     </div>
     <div class="pill pill-ff"></div>
@@ -351,6 +372,7 @@ var sinInteres = false;
 var ffMode = false; // Amigos y familia: 10% off sobre el contado efectivo
 var FF_OFF = 0.10;
 var usdMode = false;      // Mostrar solo contado en dólares
+var mixMode = false;      // Contado mixto: parte USD + saldo en pesos (sin financiar)
 var usdRate = 1520;       // Cotización ARS por USD (fallback inicial)
 var usdRateMeta = '';     // texto de origen/fecha
 
@@ -426,6 +448,7 @@ var customPrices = {};
 var descuentos = {};
 var customContado = {};
 var entregaEfectivo = {};
+var entregaUsd = {}; // dólares que entrega el cliente en pago mixto
 var seleccion = {}; // opciones tildadas por producto para el texto de WhatsApp
 var expandido = {}; // qué productos están desplegados
 
@@ -476,6 +499,28 @@ function buildCards() {
         + waBtn(idx)
         + '</div></div>';
       container.insertAdjacentHTML('beforeend', htmlU);
+      return;
+    }
+
+    // MODO MIXTO: parte en dólares + saldo en pesos, todo contado (sin financiar).
+    if (mixMode) {
+      var usdEntry = entregaUsd[idx] != null ? entregaUsd[idx] : 0;
+      var usdEnArs = Math.round(usdEntry * usdRate);
+      var saldoPesos = Math.max(contadoBase - usdEnArs, 0);
+      var htmlM = '<div class="card' + hidden + (expandido[idx] ? ' open' : '') + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
+        + '<div class="card-head" onclick="toggleCard(' + idx + ')">'
+        + '<div><div class="cat-badge ' + p.cat + '">' + CAT_LABELS[p.cat] + '</div><div class="card-name">' + p.name + '</div></div>'
+        + '<div class="card-head-right"><div class="card-head-price">' + peso(contadoBase) + '</div><span class="chev">›</span></div>'
+        + '</div>'
+        + '<div class="prices">'
+        + '<div class="mix-row"><div class="ml">Precio contado' + (ffMode ? ' (F&F -10%)' : '') + '</div><div style="font-weight:900;color:#111;font-size:17px">' + peso(contadoBase) + '</div></div>'
+        + '<div class="mix-row"><div class="ml">Paga en dólares<small>dólar $' + miles(usdRate) + ' = ' + peso(usdEnArs) + '</small></div>'
+        + '<div class="usd-entry"><span>US$</span><input id="uinput-' + idx + '" type="tel" inputmode="numeric" value="' + miles(usdEntry) + '" oninput="onEntregaUsdInput(' + idx + ',this.value)" /></div></div>'
+        + '<div class="mix-saldo"><span class="sl">Saldo en pesos</span><span class="sv">' + peso(saldoPesos) + '</span></div>'
+        + '<div class="usd-note">Pago contado: ' + usd(usdEntry) + ' en dólares + ' + peso(saldoPesos) + ' en pesos. Sin financiación.</div>'
+        + waBtn(idx)
+        + '</div></div>';
+      container.insertAdjacentHTML('beforeend', htmlM);
       return;
     }
 
@@ -714,6 +759,16 @@ function onEntregaInput(idx, val) {
   if (input) { input.value = miles(val); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
+function onEntregaUsdInput(idx, val) {
+  var n = parseInt(String(val).replace(/\D/g, ''), 10);
+  if (n && n > 0) { entregaUsd[idx] = n; } else { delete entregaUsd[idx]; }
+  var scrollY = window.scrollY;
+  buildCards();
+  window.scrollTo(0, scrollY);
+  var input = document.getElementById('uinput-' + idx);
+  if (input) { input.value = miles(val); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+}
+
 function resetPrecio(idx) {
   delete customPrices[idx];
   delete descuentos[idx];
@@ -738,6 +793,25 @@ function copiarWA(idx) {
       + '_Precios orientativos. Pueden variar sin previo aviso y están sujetos a aprobación crediticia._\n\n'
       + '_Nuuv Córdoba — Concesionario oficial NIU_';
     document.getElementById('waTexto').value = txtU;
+    document.getElementById('modalCopyBtn').textContent = 'Copiar todo';
+    document.getElementById('modalCopyBtn').classList.remove('done');
+    document.getElementById('waModal').classList.add('on');
+    setTimeout(function(){ document.getElementById('waTexto').select(); }, 100);
+    return;
+  }
+
+  // Modo mixto: parte en dólares + saldo en pesos.
+  if (mixMode) {
+    var uEntry = entregaUsd[idx] != null ? entregaUsd[idx] : 0;
+    var uArs = Math.round(uEntry * usdRate);
+    var saldo = Math.max(contadoEfectivo - uArs, 0);
+    var txtM = '🛵 *' + p.name + '*\n\n'
+      + '💵 *Pago contado' + (ffMode ? ' (F&F)' : '') + ':* ' + peso(contadoEfectivo) + '\n'
+      + '• En dólares: ' + usd(uEntry) + '  _(≈ ' + peso(uArs) + ' · dólar $' + miles(usdRate) + ')_\n'
+      + '• Saldo en pesos: ' + peso(saldo) + '\n\n'
+      + '_Precios orientativos. Pueden variar sin previo aviso y están sujetos a aprobación crediticia._\n\n'
+      + '_Nuuv Córdoba — Concesionario oficial NIU_';
+    document.getElementById('waTexto').value = txtM;
     document.getElementById('modalCopyBtn').textContent = 'Copiar todo';
     document.getElementById('modalCopyBtn').classList.remove('done');
     document.getElementById('waModal').classList.add('on');
@@ -861,12 +935,26 @@ function pctLista(total, base) {
   return '<span class="pct-badge ' + cls + '">' + txt + '</span>';
 }
 
+function actualizarRateBar() {
+  document.getElementById('rateBar').style.display = (usdMode || mixMode) ? 'flex' : 'none';
+  if (usdMode || mixMode) refrescarRateUI();
+}
+
 // Toggle USD
 document.getElementById('chkUsd').addEventListener('change', function() {
   usdMode = this.checked;
+  if (usdMode && mixMode) { mixMode = false; document.getElementById('chkMix').checked = false; document.getElementById('togMixSub').textContent = 'Parte en dólares, saldo en pesos · sin financiación'; }
   document.getElementById('togUsdSub').textContent = usdMode ? 'Solo contado en USD · sin financiación' : 'Mostrando en pesos';
-  document.getElementById('rateBar').style.display = usdMode ? 'flex' : 'none';
-  if (usdMode) refrescarRateUI();
+  actualizarRateBar();
+  buildCards();
+});
+
+// Toggle pago mixto USD + pesos
+document.getElementById('chkMix').addEventListener('change', function() {
+  mixMode = this.checked;
+  if (mixMode && usdMode) { usdMode = false; document.getElementById('chkUsd').checked = false; document.getElementById('togUsdSub').textContent = 'Mostrando en pesos'; }
+  document.getElementById('togMixSub').textContent = mixMode ? 'Cliente entrega USD, el resto en pesos · sin financiación' : 'Parte en dólares, saldo en pesos · sin financiación';
+  actualizarRateBar();
   buildCards();
 });
 
