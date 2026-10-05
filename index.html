@@ -303,7 +303,8 @@
   <div class="nota">Precio contado: valor que recibe la agencia.</div>
   <div class="nota">Naranja X (nuevo convenio con bonificaciones): costo total por plan — 1c 7,14% · Plan Z 8,23% · 5c 12,64% · 9c 19,60% · 12c 24,44% · 15c 28,92%. Incluye interés promocional, arancel e impuestos.</div>
   <div class="nota">Bancor: TNA 19%, UVA $1.822,24. Solo aplica a motos homologadas.</div>
-  <div class="nota">Monopatines (KQi) y bicis no tienen crédito Bancor.</div>
+  <div class="nota">BBVA Prendario: motos eléctricas, financia hasta 60% del valor (resto a cargo del cliente). TNA 50,90% · CFTEA 82,32%. Cuota promedio orientativa, sujeta a aprobación crediticia.</div>
+  <div class="nota">Monopatines (KQi) y bicis no tienen crédito Bancor ni BBVA.</div>
   <div class="nota">Cuota Simple NAVE (3 y 6c): CFT 7,64% / 13,89% a cargo del cliente. Con el toggle "sin interés", vos absorbés el TCC (7,23% / 13,57%).</div>
   <div class="nota">NAVE (1, 9 y 12c): 1c sin costo · CFT 29,76% / 40,24% a cargo del cliente.</div>
 </div>
@@ -336,6 +337,19 @@ var NX_PLANES = [
 function nxTotal(base, plan) {
   // Costo total del plan (ya incluye interés + arancel + impuestos) sobre la base.
   return base * (1 + plan.costo / 100);
+}
+
+// BBVA Prendario — Motos Eléctricas (TNA 50,90%, CFTEA 82,32%). Financia hasta 60% del valor.
+// "per100" = cuota promedio mensual por cada $100.000 financiados (brief BBVA 05.2026).
+var BBVA_LTV = 0.60;
+var BBVA_PLANES = [
+  { label:'12 meses', n:12, per100:11324.24 },
+  { label:'24 meses', n:24, per100:7258.58 },
+  { label:'36 meses', n:36, per100:6031.76 },
+  { label:'48 meses', n:48, per100:5503.82 }
+];
+function bbvaCuota(montoFin, per100) {
+  return montoFin / 100000 * per100;
 }
 
 var PRODUCTS = [
@@ -550,6 +564,21 @@ function buildCards() {
         + '<div class="prow"><div class="prow-lbl">Crédito Bancor</div><div class="na-badge">No aplica</div></div>';
     }
 
+    // BBVA Prendario: aplica a las mismas motos homologadas que Bancor.
+    var bbvaHTML = '';
+    if (p.full.b72 || p.full.b36) {
+      var bbvaMonto = Math.round(precioEfectivo * BBVA_LTV);
+      bbvaHTML = '<div class="section-title">BBVA — Prendario (financia 60%)</div>'
+        + BBVA_PLANES.map(function(pl) {
+            var cuota = bbvaCuota(bbvaMonto, pl.per100);
+            return row(pl.label, '<div class="prow-cuota">' + peso(cuota) + '/mes</div><div class="prow-total">' + pl.n + ' meses · TNA 50,9%</div>', 'azul', 'bbva' + pl.n, idx);
+          }).join('')
+        + '<div class="usd-note">BBVA financia el 60% (' + peso(bbvaMonto) + '). El 40% restante lo aporta el cliente. Cuotas orientativas, sujetas a aprobación.</div>';
+    } else {
+      bbvaHTML = '<div class="section-title">BBVA — Prendario</div>'
+        + '<div class="prow"><div class="prow-lbl">Prendario BBVA</div><div class="na-badge">No aplica</div></div>';
+    }
+
     var senaBoxHTML = withSena
       ? '<div class="sena-box on">'
         + '<div class="sl">Entrega + financiación</div>'
@@ -655,6 +684,7 @@ function buildCards() {
           }).join('');
         })()
       + bancorHTML
+      + bbvaHTML
       + waBtn(idx)
       + '</div></div>';
 
@@ -866,6 +896,11 @@ function copiarWA(idx) {
     var bScale = base / p.full.lista;
     ops.push({ key:'b36', grupo:'bancor', linea:'• 36 cuotas: ' + peso(Math.round(p.full.b36 * bScale)) + '/mes' });
     ops.push({ key:'b72', grupo:'bancor', linea:'• 72 cuotas: ' + peso(Math.round(p.full.b72 * bScale)) + '/mes' });
+
+    var bbvaMontoW = Math.round(precioEfectivo * BBVA_LTV);
+    BBVA_PLANES.forEach(function(pl) {
+      ops.push({ key:'bbva' + pl.n, grupo:'bbva', linea:'• ' + pl.label + ': ' + peso(bbvaCuota(bbvaMontoW, pl.per100)) + '/mes' });
+    });
   }
 
   // Filtrar por lo tildado. Si no hay nada tildado, se mandan todas.
@@ -873,7 +908,7 @@ function copiarWA(idx) {
   var activos = Object.keys(sel).filter(function(k) { return sel[k]; });
   var elegidas = activos.length ? ops.filter(function(o) { return activos.indexOf(o.key) >= 0; }) : ops;
 
-  var HDR = { cs:'🟢 *Cuota Simple — NAVE*', nave:'🔵 *NAVE — Galicia*', nx:'🟠 *Naranja X*', bancor:'🏦 *Bancor*' };
+  var HDR = { cs:'🟢 *Cuota Simple — NAVE*', nave:'🔵 *NAVE — Galicia*', nx:'🟠 *Naranja X*', bancor:'🏦 *Bancor*', bbva:'🏦 *BBVA Prendario (financia 60%)*' };
 
   var lines = [];
   lines.push('🛵 *' + p.name + '*');
