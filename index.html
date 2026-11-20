@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex"/>
+  <meta name="googlebot" content="noindex, nofollow"/>
   <title>Lista de Precios — Nuuv</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -117,6 +118,40 @@
     .usd-note{font-size:12px;color:#999;text-align:center;padding:2px 0 4px}
     .usd-warn{color:#c0392b;font-weight:700;background:#fff0f0;border-radius:8px;padding:8px 10px}
     .usd-entry-warn{border-color:#c0392b !important;background:#fff0f0 !important}
+    /* Financiación propia NUUV */
+    #chkNuuv{display:none}
+    .tog-nuuv{background:#fef3e8;border-color:#ffd9b8}
+    #chkNuuv:checked ~ .tog-nuuv{background:#fde7d2;border-color:#e85d00}
+    #chkNuuv:checked ~ .tog-nuuv .tl{color:#e85d00}
+    #chkNuuv:checked ~ .tog-nuuv .ts{color:#e85d00;font-weight:600}
+    .pill-nuuv{background:#ddd}
+    #chkNuuv:checked ~ .tog-nuuv .pill-nuuv{background:#e85d00}
+    #chkNuuv:checked ~ .tog-nuuv .pill-nuuv::after{left:23px}
+    .interno-tag{font-size:9px;font-weight:800;background:#111;color:#fff;border-radius:4px;padding:1px 5px;vertical-align:middle;letter-spacing:.5px}
+    .nuuv-controls{width:100%;max-width:480px;margin:0 0 16px;background:#fff;border:1.5px solid #ffd9b8;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+    .nuuv-seg-row{display:flex;align-items:center;gap:10px}
+    .nuuv-seg-lbl{font-size:12px;font-weight:700;color:#777;width:56px;flex-shrink:0}
+    .nuuv-seg{display:flex;gap:4px;flex:1}
+    .nuuv-seg button{flex:1;padding:7px 4px;border:1.5px solid #e4e4e4;background:#fff;border-radius:8px;font-size:12px;font-weight:700;color:#777;cursor:pointer;font-family:inherit}
+    .nuuv-seg button.active{background:#e85d00;border-color:#e85d00;color:#fff}
+    .nuuv-intern-toggle{font-size:12px;color:#555;font-weight:600;display:flex;align-items:center;gap:7px;cursor:pointer}
+    .nuuv-form{background:#faf7f4;border-radius:12px;padding:6px 12px;margin-bottom:12px}
+    .nuuv-chk{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#555;padding:8px 2px;cursor:pointer}
+    .nuuv-chk input{width:18px;height:18px;accent-color:#e85d00}
+    .nuuv-sel{border:1.5px solid #e4e4e4;border-radius:8px;padding:6px 10px;font-size:15px;font-weight:800;font-family:inherit;color:#111;background:#fff;cursor:pointer}
+    .nuuv-intern-box{background:#f3f4f8;border:1px dashed #c3c8d4;border-radius:10px;padding:8px 12px;margin:10px 0}
+    .nuuv-intern-t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#8893a8;margin:4px 0 2px}
+    .nuuv-cron{background:#fff;border:1px solid #f0f0f0;border-radius:10px;padding:8px 12px;margin:8px 0}
+    .nuuv-cron-t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#bbb;margin-bottom:4px}
+    .nuuv-cron-row{display:flex;justify-content:space-between;font-size:13px;color:#555;padding:3px 0;border-bottom:1px solid #f8f8f8}
+    .nuuv-cron-row:last-child{border-bottom:none}
+    .nuuv-cron-row span:last-child{font-weight:800;color:#111}
+    .nuuv-aviso{font-size:12px;color:#856404;background:#fff8e1;border-radius:8px;padding:8px 10px;margin:4px 0;font-weight:600}
+    .nuuv-estado{text-align:center;margin:10px 0}
+    .nuuv-est{display:inline-block;font-size:12px;font-weight:800;border-radius:99px;padding:6px 16px}
+    .nuuv-ok{background:#e8fff0;color:#1a8c4e}
+    .nuuv-blocked{background:#fdecec;color:#c0392b}
+    .nuuv-prelim{background:#fff8e1;color:#856404}
 
     /* Input precio ajustado */
     .precio-wrap{margin:0 0 14px;padding:12px 14px;background:#f9f9f9;border-radius:12px;border:2px solid #eee}
@@ -285,6 +320,38 @@
   </label>
 </div>
 
+<!-- Toggle Financiación propia NUUV (interno) -->
+<div class="tog-wrap">
+  <input type="checkbox" id="chkNuuv"/>
+  <label class="tog-label tog-nuuv" for="chkNuuv">
+    <div>
+      <div class="tl">Financiación propia NUUV <span class="interno-tag">interno</span></div>
+      <div class="ts" id="togNuuvSub">Cuotas propias de NUUV · sola o con Bancor</div>
+    </div>
+    <div class="pill pill-nuuv"></div>
+  </label>
+</div>
+
+<!-- Controles NUUV -->
+<div class="nuuv-controls" id="nuuvControls" style="display:none">
+  <div class="nuuv-seg-row">
+    <span class="nuuv-seg-lbl">Moneda</span>
+    <div class="nuuv-seg" id="segMoneda">
+      <button data-v="ARS" class="active" onclick="setNuuvMoneda('ARS')">ARS</button>
+      <button data-v="USD" onclick="setNuuvMoneda('USD')">USD</button>
+    </div>
+  </div>
+  <div class="nuuv-seg-row">
+    <span class="nuuv-seg-lbl">Perfil</span>
+    <div class="nuuv-seg" id="segPerfil">
+      <button data-v="empleado" class="active" onclick="setNuuvPerfil('empleado')">Empleado</button>
+      <button data-v="amigo" onclick="setNuuvPerfil('amigo')">Amigo</button>
+      <button data-v="desconocido" onclick="setNuuvPerfil('desconocido')">Desconocido</button>
+    </div>
+  </div>
+  <label class="nuuv-chk nuuv-intern-toggle"><input type="checkbox" id="chkNuuvIntern" onchange="setNuuvInternal(this.checked)"/> Vista interna (costo, exposición)</label>
+</div>
+
 <!-- Tabs -->
 <div class="tabs">
   <div class="tab active" data-cat="all">Todos</div>
@@ -351,6 +418,107 @@ function bbvaCuota(montoFin, per100) {
   return montoFin / 100000 * per100;
 }
 
+// Formato en la moneda del plan NUUV
+function monN(n, usdPlan) { return usdPlan ? usd(n) : peso(n); }
+
+// Núcleo de cálculo de la Financiación propia NUUV
+function calcNuuv(idx) {
+  var p = PRODUCTS[idx];
+  var cfg = NUUV_CFG;
+  var perfil = cfg.perfiles[nuuvProfile];
+  var usdPlan = (nuuvCurrency === 'USD');
+  var rate = usdRate;
+  var esMoto = !!(p.full.b72 || p.full.b36);
+
+  var lista = p.full.lista, contado = p.full.contado;
+  var entrega = Math.max(nuuvEntrega[idx] || 0, 0);   // ARS
+  var bancor = Math.max(nuuvBancor[idx] || 0, 0);     // ARS neto
+  var bancorConf = !!nuuvBancorConf[idx];
+  var comision = Math.max(nuuvComision[idx] || 0, 0);
+  var patent = Math.max(nuuvPatent[idx] || 0, 0);
+  var otros = Math.max(nuuvOtros[idx] || 0, 0);
+  var costo = Math.max(nuuvCosto[idx] || 0, 0);
+  var gastosSalida = comision + patent + otros;
+
+  var precioUSD = (rate > 0) ? (contado / rate) : 0;
+  var precioPlan, entregaPlan, bancorPlan;
+  if (usdPlan) {
+    precioPlan = precioUSD;                      // USD (sobre contado)
+    entregaPlan = (rate > 0) ? entrega / rate : 0;
+    bancorPlan = (rate > 0) ? bancor / rate : 0;
+  } else {
+    precioPlan = lista;                          // ARS (sobre lista)
+    entregaPlan = entrega;
+    bancorPlan = bancor;
+  }
+
+  var saldo = precioPlan - entregaPlan - bancorPlan;
+  var maxCuotas = usdPlan ? perfil.maxUSD : perfil.maxARS;
+  var nCuotas = nuuvCuotas[idx] || maxCuotas;
+  if (nCuotas > maxCuotas) nCuotas = maxCuotas;
+  if (nCuotas < 1) nCuotas = 1;
+
+  var entregaMin = Math.max(cfg.entregaMinima, gastosSalida);
+  var preliminar = (gastosSalida === 0);
+  var maxSaldo = precioPlan * perfil.maxSaldoPct;
+
+  var errores = [], avisos = [];
+  if (!esMoto) errores.push('La Financiación propia NUUV es solo para motos eléctricas.');
+  if (usdPlan && !(rate > 0)) errores.push('Cargá una cotización de dólar mayor a cero.');
+
+  var cubre = entregaPlan + bancorPlan;
+  if (cubre > precioPlan + (usdPlan ? 0.5 : 1)) errores.push('Entrega + Bancor superan el precio. Corregí los montos.');
+
+  var saldoCero = (saldo <= (usdPlan ? 0.5 : 1));
+  if (saldoCero) saldo = Math.max(saldo, 0);
+
+  var faltaEntrega = Math.max(entregaMin - entrega, 0);
+  if (!saldoCero && esMoto && entrega < entregaMin) errores.push('Entrega por debajo del mínimo (' + peso(entregaMin) + '). Faltan ' + peso(faltaEntrega) + '.');
+
+  var excedeSaldo = (!saldoCero && saldo > maxSaldo + (usdPlan ? 0.5 : 1));
+  if (excedeSaldo) {
+    var exceso = saldo - maxSaldo;
+    var excesoARS = usdPlan ? Math.round(exceso * rate) : exceso;
+    errores.push('Saldo supera el ' + Math.round(perfil.maxSaldoPct * 100) + '% permitido para ' + perfil.label + '. Subí entrega o Bancor ' + (usdPlan ? (usd(exceso) + ' (' + peso(excesoARS) + ')') : peso(exceso)) + '.');
+  }
+
+  if (bancor > 0 && !bancorConf) avisos.push('Bancor pendiente de confirmar: no se puede aprobar la operación mixta.');
+  if (preliminar) avisos.push('Gastos de salida sin cargar: cotización preliminar (piso ' + peso(cfg.entregaMinima) + ').');
+
+  var bloqueada = errores.length > 0 || (bancor > 0 && !bancorConf);
+  var aprobable = !bloqueada && !preliminar;
+
+  // Cronograma: cuotas iguales, última ajustada para cerrar el saldo exacto
+  var cuotas = [];
+  if (!saldoCero && saldo > 0 && nCuotas >= 1) {
+    var base = usdPlan ? Math.round(saldo / nCuotas) : Math.round(saldo / nCuotas);
+    for (var i = 1; i <= nCuotas; i++) {
+      cuotas.push(i < nCuotas ? base : Math.round(saldo - base * (nCuotas - 1)));
+    }
+  }
+  var primerVto = new Date(); primerVto.setMonth(primerVto.getMonth() + 1);
+
+  var difARS = usdPlan ? 0 : (lista - contado);
+  var difPct = contado > 0 ? (lista / contado - 1) * 100 : 0;
+
+  var dineroIngresado = entrega + (bancorConf ? bancor : 0);
+  var pendienteARS = usdPlan ? Math.round(saldo * rate) : saldo;
+  var exposicion = (costo > 0) ? Math.max(costo + gastosSalida - dineroIngresado, 0) : null;
+
+  return { p:p, idx:idx, usdPlan:usdPlan, rate:rate, esMoto:esMoto, perfil:perfil,
+    lista:lista, contado:contado, precioUSD:precioUSD, precioPlan:precioPlan,
+    entrega:entrega, bancor:bancor, bancorConf:bancorConf, entregaPlan:entregaPlan, bancorPlan:bancorPlan,
+    saldo:saldo, saldoCero:saldoCero, nCuotas:nCuotas, maxCuotas:maxCuotas, cuotas:cuotas, primerVto:primerVto,
+    entregaMin:entregaMin, faltaEntrega:faltaEntrega, preliminar:preliminar, maxSaldo:maxSaldo,
+    gastosSalida:gastosSalida, comision:comision, patent:patent, otros:otros, costo:costo,
+    dineroIngresado:dineroIngresado, pendienteARS:pendienteARS, exposicion:exposicion,
+    difARS:difARS, difPct:difPct, errores:errores, avisos:avisos, bloqueada:bloqueada, aprobable:aprobable };
+}
+
+function fechaCorta(d) {
+  return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+}
+
 var PRODUCTS = [
   { cat:'moto', name:'M+ Sport',     full:{ lista:4340000,  contado:3900000,  b72:112000, b36:180000 }, sena:{ entrega:1950000, financiar:2145000, b72:56000,  b36:90000  } },
   { cat:'moto', name:'NQi Sport EXT',full:{ lista:5670000,  contado:5100000,  b72:145000, b36:235000 }, sena:{ entrega:2540000, financiar:2794000, b72:72500,  b36:117500 } },
@@ -388,6 +556,30 @@ var usdMode = false;      // Mostrar solo contado en dólares
 var mixMode = false;      // Contado mixto: parte USD + saldo en pesos (sin financiar)
 var usdRate = 1520;       // Cotización ARS por USD (fallback inicial)
 var usdRateMeta = '';     // texto de origen/fecha
+
+// ====== Financiación propia NUUV (interna) ======
+// Topes y plazos configurables en un solo lugar.
+var NUUV_CFG = {
+  entregaMinima: 250000,            // piso de entrega en ARS antes de retirar la moto
+  perfiles: {
+    empleado:    { label:'Empleado CC / Ragazzini', maxSaldoPct: 1.00, maxARS:12, maxUSD:12 },
+    amigo:       { label:'Amigo o conocido',        maxSaldoPct: 1.00, maxARS:6,  maxUSD:9  },
+    desconocido: { label:'Desconocido',             maxSaldoPct: 0.50, maxARS:3,  maxUSD:6  }
+  }
+};
+var nuuvMode = false;               // modo Financiación propia NUUV
+var nuuvInternal = false;           // vista interna (costo, exposición, margen)
+var nuuvCurrency = 'ARS';           // 'ARS' | 'USD'
+var nuuvProfile = 'empleado';       // perfil del comprador
+// estado por producto
+var nuuvEntrega = {};   // ARS que entrega el cliente
+var nuuvBancor = {};    // desembolso NETO de Bancor en ARS
+var nuuvBancorConf = {};// true si el desembolso Bancor está confirmado
+var nuuvCuotas = {};    // cantidad de cuotas elegida
+var nuuvComision = {};  // gasto de salida (interno)
+var nuuvPatent = {};    // gasto de salida (interno)
+var nuuvOtros = {};     // gasto de salida (interno)
+var nuuvCosto = {};     // costo de la moto (interno, opcional)
 
 function usd(n) {
   if (!n && n !== 0) return 'US$ —';
@@ -475,6 +667,101 @@ function waBtn(idx) {
   return '<button class="wa-btn" onclick="copiarWA(' + idx + ')"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.857L.054 23.447a.5.5 0 00.499.553.498.498 0 00.131-.018l5.736-1.51A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.875 9.875 0 01-5.031-1.378l-.36-.214-3.733.983.998-3.648-.235-.374A9.859 9.859 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118S21.882 6.533 21.882 12 17.467 21.882 12 21.882z"/></svg>Copiar para WhatsApp</button>';
 }
 
+function nuuvMrow(l, v) {
+  return '<div class="mix-row"><div class="ml">' + l + '</div><div style="font-weight:800;color:#111;text-align:right">' + v + '</div></div>';
+}
+function nuuvField(idx, field, label, value) {
+  return '<div class="mix-row"><div class="ml">' + label + '</div>'
+    + '<div class="usd-entry"><span>$</span><input id="nuuv-' + field + '-' + idx + '" type="tel" inputmode="numeric" value="' + (value ? miles(value) : '') + '" placeholder="0" oninput="onNuuvNum(' + idx + ',\'' + field + '\',this.value)"/></div></div>';
+}
+function nuuvCard(idx) {
+  var p = PRODUCTS[idx];
+  var hidden = (activeCat !== 'all' && activeCat !== p.cat) ? ' hidden' : '';
+  var c = calcNuuv(idx);
+  var usdP = c.usdPlan;
+  var money = function(n){ return monN(n, usdP); };
+
+  var headPrice = c.esMoto ? (c.saldoCero ? 'Saldo $0' : money(c.saldo) + ' saldo') : 'n/a';
+  var h = '<div class="card' + hidden + (expandido[idx] ? ' open' : '') + '" data-cat="' + p.cat + '" id="card-' + idx + '">'
+    + '<div class="card-head" onclick="toggleCard(' + idx + ')">'
+    + '<div><div class="cat-badge ' + p.cat + '">' + CAT_LABELS[p.cat] + '</div><div class="card-name">' + p.name + '</div></div>'
+    + '<div class="card-head-right"><div class="card-head-price">' + headPrice + '</div><span class="chev">›</span></div>'
+    + '</div><div class="prices">';
+
+  if (!c.esMoto) {
+    return h + '<div class="usd-note">La Financiación propia NUUV es solo para motos eléctricas. ' + p.name + ' no aplica.</div></div></div>';
+  }
+
+  // Inputs
+  h += '<div class="nuuv-form">'
+    + nuuvField(idx, 'entrega', 'Entrega del cliente (ARS)', c.entrega)
+    + nuuvField(idx, 'bancor', 'Bancor — desembolso neto (ARS)', c.bancor)
+    + '<label class="nuuv-chk"><input type="checkbox" ' + (c.bancorConf ? 'checked' : '') + ' onchange="toggleNuuvBancorConf(' + idx + ',this.checked)"/> Bancor confirmado</label>'
+    + '<div class="mix-row"><div class="ml">Cuotas NUUV<small>máx ' + c.maxCuotas + ' · ' + nuuvCurrency + ' · ' + c.perfil.label + '</small></div>'
+    + '<select class="nuuv-sel" onchange="onNuuvCuotas(' + idx + ',this.value)">';
+  for (var k = 1; k <= c.maxCuotas; k++) { h += '<option value="' + k + '"' + (k === c.nCuotas ? ' selected' : '') + '>' + k + '</option>'; }
+  h += '</select></div>';
+  if (nuuvInternal) {
+    h += '<div class="nuuv-intern-box"><div class="nuuv-intern-t">Gastos de salida y costo (interno)</div>'
+      + nuuvField(idx, 'comision', 'Comisión', c.comision)
+      + nuuvField(idx, 'patent', 'Patentamiento', c.patent)
+      + nuuvField(idx, 'otros', 'Otros gastos de salida', c.otros)
+      + nuuvField(idx, 'costo', 'Costo de la moto', c.costo)
+      + '</div>';
+  }
+  h += '</div>';
+
+  // Resultado
+  h += '<div class="section-title">' + (usdP ? 'Plan USD (sin interés, sobre contado)' : 'Plan ARS (cuotas fijas sobre lista)') + '</div>';
+  h += nuuvMrow('Precio contado', peso(c.contado));
+  if (usdP) {
+    h += nuuvMrow('Tipo de cambio de cierre', '$' + miles(c.rate) + ' /USD');
+    h += nuuvMrow('Precio en USD', usd(c.precioUSD));
+  } else {
+    h += nuuvMrow('Total del plan (lista)', peso(c.lista));
+    h += nuuvMrow('Diferencia s/ contado', '+' + peso(c.difARS) + ' (' + c.difPct.toFixed(1).replace('.', ',') + '%)');
+  }
+  h += nuuvMrow('Entrega', peso(c.entrega) + (usdP ? ' ≈ ' + usd(c.entregaPlan) : ''));
+  if (c.bancor > 0) h += nuuvMrow('Bancor neto', peso(c.bancor) + (usdP ? ' ≈ ' + usd(c.bancorPlan) : '') + (c.bancorConf ? '' : ' · pend.'));
+  h += nuuvMrow('Saldo que financia NUUV', '<b style="color:#e85d00">' + money(c.saldo) + '</b>');
+
+  if (!c.saldoCero && c.cuotas.length) {
+    h += nuuvMrow('Cuotas', c.nCuotas + ' × ' + money(c.cuotas[0]));
+    var cron = '<div class="nuuv-cron"><div class="nuuv-cron-t">Cronograma (1er vto ' + fechaCorta(c.primerVto) + ')</div>';
+    for (var j = 0; j < c.cuotas.length; j++) {
+      var dd = new Date(c.primerVto); dd.setMonth(c.primerVto.getMonth() + j);
+      cron += '<div class="nuuv-cron-row"><span>Cuota ' + (j + 1) + ' · ' + fechaCorta(dd) + '</span><span>' + money(c.cuotas[j]) + '</span></div>';
+    }
+    h += cron + '</div>';
+  } else if (c.saldoCero) {
+    h += '<div class="usd-note">Entrega + Bancor cubren el precio. Saldo $0, sin cuotas.</div>';
+  }
+  if (!usdP && !c.saldoCero) {
+    h += '<div class="usd-note">Cuotas fijas sobre lista: el total iguala la lista (' + peso(c.lista) + '), ' + peso(c.difARS) + ' por encima del contado. Costo financiero efectivo anualizado: pendiente de confirmar.</div>';
+  }
+
+  c.errores.forEach(function(e){ h += '<div class="usd-note usd-warn">⛔ ' + e + '</div>'; });
+  c.avisos.forEach(function(a){ h += '<div class="nuuv-aviso">⚠️ ' + a + '</div>'; });
+  var estado = c.bloqueada ? '<span class="nuuv-est nuuv-blocked">Aprobación bloqueada</span>'
+    : (c.preliminar ? '<span class="nuuv-est nuuv-prelim">Preliminar</span>'
+    : '<span class="nuuv-est nuuv-ok">Aprobable</span>');
+  h += '<div class="nuuv-estado">' + estado + '</div>';
+
+  if (nuuvInternal) {
+    h += '<div class="nuuv-intern-box"><div class="nuuv-intern-t">Vista interna · exposición</div>'
+      + nuuvMrow('Entrega mínima efectiva', peso(c.entregaMin))
+      + nuuvMrow('Entra al entregar la moto', peso(c.dineroIngresado))
+      + nuuvMrow('Pendiente de cobro NUUV', usdP ? (usd(c.saldo) + ' ≈ ' + peso(c.pendienteARS)) : peso(c.saldo))
+      + nuuvMrow('Exposición si no paga', c.exposicion != null ? peso(c.exposicion) : 'cargá el costo de la moto')
+      + '</div>';
+  }
+
+  h += '<div class="usd-note">Documentación: 1 contrato por moto + 1 pagaré por cada cuota NUUV. Al cobrar cada cuota: recibo y devolución del pagaré cancelado.</div>';
+  h += '<button class="wa-btn" onclick="copiarWA(' + idx + ')"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.857L.054 23.447a.5.5 0 00.499.553.498.498 0 00.131-.018l5.736-1.51A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.875 9.875 0 01-5.031-1.378l-.36-.214-3.733.983.998-3.648-.235-.374A9.859 9.859 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118S21.882 6.533 21.882 12 17.467 21.882 12 21.882z"/></svg>Cotización para el cliente</button>';
+  h += '</div></div>';
+  return h;
+}
+
 function isSel(idx, key) { return !!(seleccion[idx] && seleccion[idx][key]); }
 function toggleSel(idx, key, checked) {
   if (!seleccion[idx]) seleccion[idx] = {};
@@ -486,6 +773,11 @@ function buildCards() {
   container.innerHTML = '';
 
   PRODUCTS.forEach(function(p, idx) {
+    // MODO FINANCIACIÓN PROPIA NUUV (interno).
+    if (nuuvMode) {
+      container.insertAdjacentHTML('beforeend', nuuvCard(idx));
+      return;
+    }
     var hidden = (activeCat !== 'all' && activeCat !== p.cat) ? ' hidden' : '';
     // Precio efectivo: custom o lista original
     var precioEfectivo = customPrices[idx] || p.full.lista;
@@ -802,6 +1094,23 @@ function onEntregaUsdInput(idx, val) {
   if (input) { input.value = miles(val); input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
 }
 
+var NUUV_FIELDS = { entrega:nuuvEntrega, bancor:nuuvBancor, comision:nuuvComision, patent:nuuvPatent, otros:nuuvOtros, costo:nuuvCosto };
+function onNuuvNum(idx, field, val) {
+  var n = parseInt(String(val).replace(/\D/g, ''), 10);
+  if (n && n > 0) { NUUV_FIELDS[field][idx] = n; } else { delete NUUV_FIELDS[field][idx]; }
+  var sy = window.scrollY; buildCards(); window.scrollTo(0, sy);
+  var el = document.getElementById('nuuv-' + field + '-' + idx);
+  if (el) { el.value = miles(val); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+}
+function onNuuvCuotas(idx, val) {
+  var n = parseInt(val, 10) || 1; nuuvCuotas[idx] = n;
+  var sy = window.scrollY; buildCards(); window.scrollTo(0, sy);
+}
+function toggleNuuvBancorConf(idx, checked) {
+  if (checked) nuuvBancorConf[idx] = true; else delete nuuvBancorConf[idx];
+  var sy = window.scrollY; buildCards(); window.scrollTo(0, sy);
+}
+
 function resetPrecio(idx) {
   delete customPrices[idx];
   delete descuentos[idx];
@@ -812,8 +1121,46 @@ function resetPrecio(idx) {
   window.scrollTo(0, scrollY);
 }
 
+function abrirModalWA(texto) {
+  document.getElementById('waTexto').value = texto;
+  document.getElementById('modalCopyBtn').textContent = 'Copiar todo';
+  document.getElementById('modalCopyBtn').classList.remove('done');
+  document.getElementById('waModal').classList.add('on');
+  setTimeout(function(){ document.getElementById('waTexto').select(); }, 100);
+}
+
 function copiarWA(idx) {
   var p = PRODUCTS[idx];
+
+  // Modo Financiación propia NUUV: cotización para el cliente (sin datos internos).
+  if (nuuvMode) {
+    var c = calcNuuv(idx);
+    var money = function(n){ return monN(n, c.usdPlan); };
+    var L = [];
+    L.push('🛵 *' + p.name + '*');
+    L.push('*Financiación propia NUUV*');
+    L.push('');
+    L.push('💵 Contado: ' + peso(c.contado));
+    if (c.usdPlan) {
+      L.push('Precio en USD: ' + usd(c.precioUSD) + '  _(dólar $' + miles(c.rate) + ')_');
+    } else {
+      L.push('Total del plan: ' + peso(c.lista));
+    }
+    L.push('Entrega: ' + peso(c.entrega));
+    if (c.bancor > 0) L.push('Crédito Bancor: ' + peso(c.bancor));
+    L.push('Saldo a financiar: ' + money(c.saldo));
+    if (!c.saldoCero && c.cuotas.length) {
+      L.push('Cuotas: ' + c.nCuotas + ' × ' + money(c.cuotas[0]));
+      L.push('1er vencimiento: ' + fechaCorta(c.primerVto));
+    }
+    L.push('');
+    L.push('_Precios y cuotas orientativos. Sujeto a aprobación interna._');
+    L.push('');
+    L.push('_Nuuv Córdoba — Concesionario oficial NIU_');
+    abrirModalWA(L.join('\n'));
+    return;
+  }
+
   var precioEfectivo = customPrices[idx] || p.full.lista;
   var ffFactor = ffMode ? (1 - FF_OFF) : 1;
   var contadoEfectivo = (customContado[idx] != null) ? customContado[idx] : Math.round(precioEfectivo * p.full.contado / p.full.lista * ffFactor);
@@ -974,14 +1321,46 @@ function pctLista(total, base) {
 }
 
 function actualizarRateBar() {
-  document.getElementById('rateBar').style.display = (usdMode || mixMode) ? 'flex' : 'none';
-  if (usdMode || mixMode) refrescarRateUI();
+  var ver = usdMode || mixMode || (nuuvMode && nuuvCurrency === 'USD');
+  document.getElementById('rateBar').style.display = ver ? 'flex' : 'none';
+  if (ver) refrescarRateUI();
+}
+
+// Financiación propia NUUV
+document.getElementById('chkNuuv').addEventListener('change', function() {
+  nuuvMode = this.checked;
+  if (nuuvMode) {
+    // Exclusivo con los modos de contado
+    if (usdMode) { usdMode = false; document.getElementById('chkUsd').checked = false; document.getElementById('togUsdSub').textContent = 'Mostrando en pesos'; }
+    if (mixMode) { mixMode = false; document.getElementById('chkMix').checked = false; document.getElementById('togMixSub').textContent = 'Parte en dólares, saldo en pesos · sin financiación'; }
+  }
+  document.getElementById('nuuvControls').style.display = nuuvMode ? 'flex' : 'none';
+  var tip = document.querySelector('.tip-sel'); if (tip) tip.style.display = nuuvMode ? 'none' : '';
+  document.getElementById('togNuuvSub').textContent = nuuvMode ? 'Modo cotización interna activo' : 'Cuotas propias de NUUV · sola o con Bancor';
+  actualizarRateBar();
+  buildCards();
+});
+function setNuuvMoneda(v) {
+  nuuvCurrency = v;
+  document.querySelectorAll('#segMoneda button').forEach(function(b){ b.classList.toggle('active', b.dataset.v === v); });
+  actualizarRateBar();
+  buildCards();
+}
+function setNuuvPerfil(v) {
+  nuuvProfile = v;
+  document.querySelectorAll('#segPerfil button').forEach(function(b){ b.classList.toggle('active', b.dataset.v === v); });
+  buildCards();
+}
+function setNuuvInternal(checked) {
+  nuuvInternal = checked;
+  var sy = window.scrollY; buildCards(); window.scrollTo(0, sy);
 }
 
 // Toggle USD
 document.getElementById('chkUsd').addEventListener('change', function() {
   usdMode = this.checked;
   if (usdMode && mixMode) { mixMode = false; document.getElementById('chkMix').checked = false; document.getElementById('togMixSub').textContent = 'Parte en dólares, saldo en pesos · sin financiación'; }
+  if (usdMode && nuuvMode) { nuuvMode = false; document.getElementById('chkNuuv').checked = false; document.getElementById('nuuvControls').style.display = 'none'; document.getElementById('togNuuvSub').textContent = 'Cuotas propias de NUUV · sola o con Bancor'; }
   document.getElementById('togUsdSub').textContent = usdMode ? 'Solo contado en USD · sin financiación' : 'Mostrando en pesos';
   actualizarRateBar();
   buildCards();
@@ -991,6 +1370,7 @@ document.getElementById('chkUsd').addEventListener('change', function() {
 document.getElementById('chkMix').addEventListener('change', function() {
   mixMode = this.checked;
   if (mixMode && usdMode) { usdMode = false; document.getElementById('chkUsd').checked = false; document.getElementById('togUsdSub').textContent = 'Mostrando en pesos'; }
+  if (mixMode && nuuvMode) { nuuvMode = false; document.getElementById('chkNuuv').checked = false; document.getElementById('nuuvControls').style.display = 'none'; document.getElementById('togNuuvSub').textContent = 'Cuotas propias de NUUV · sola o con Bancor'; }
   document.getElementById('togMixSub').textContent = mixMode ? 'Cliente entrega USD, el resto en pesos · sin financiación' : 'Parte en dólares, saldo en pesos · sin financiación';
   actualizarRateBar();
   buildCards();
